@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>채팅</title>
+    <link href="./assets/css/websocket-stomp-chat.css" rel="stylesheet" />
+    <link href="./assets/css/toast.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/@stomp/stompjs"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  </head>
+
+  <body>
+    <div id="toastContainer" aria-live="polite" aria-atomic="true"></div>
+
+    <h2>단체 채팅</h2>
+    <div id="chatBox"></div>
+    <input type="text" id="messageInput" placeholder="메시지를 입력하세요..." />
+    <button id="sendBtn">보내기</button>
+
+    <script type="module" src="./assets/js/websocket-stomp-chat.js"></script>
+  </body>
+</html>

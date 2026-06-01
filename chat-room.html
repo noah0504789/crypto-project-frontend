@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>인기 채팅방</title>
+    <link href="./assets/css/chat-room.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  </head>
+
+  <body>
+    <h1>인기 채팅방</h1>
+
+    <div class="toolbar">
+      <div class="controls">
+        <label>Category:
+          <input id="categoryInput" type="text" value="CRYPTO_CURRENCY" />
+        </label>
+      </div>
+    </div>
+
+    <div class="wrap">
+      <div id="list" class="list"></div>
+      <button id="moreBtn" class="more" type="button">더 보기</button>
+    </div>
+
+    <script type="module" src="./assets/js/chat-room.js"></script>
+  </body>
+</html>

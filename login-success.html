@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8">
+    <title>로그인 성공</title>
+    <link href="./assets/css/login.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  </head>
+
+  <body>
+    <div id="after-login">
+      <p>✅ OAuth 로그인 성공!</p>
+      <button id="logoutBtn">로그아웃</button>
+    </div>
+
+    <hr>
+
+    <button id="testApiBtn">보안 API 호출하기</button>
+    <button id="topChatRoomBtn">인기 채팅방 보러가기</button>
+    <button id="myChatRoomBtn">내 채팅방</button>
+    <button id="createChatRoomBtn">채팅방 만들기</button>
+    <br>
+
+    <div id="api-result"></div>
+
+    <script type="module" src="./assets/js/login-success.js"></script>
+  </body>
+</html>

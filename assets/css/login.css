@@ -1,0 +1,15 @@
+#kakaoLoginBtn img,
+#googleLoginBtn img {
+  width: 100px;
+  cursor: pointer;
+}
+
+#error-message {
+  color: red;
+  margin-top: 10px;
+}
+
+#api-result {
+  margin-top: 1em; 
+  white-space: pre-line;
+}

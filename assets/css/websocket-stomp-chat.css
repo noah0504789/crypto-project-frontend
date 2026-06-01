@@ -1,0 +1,141 @@
+:root {
+  --side-w: 40px; /* 아바타/닉네임 칼럼 고정 폭 */
+}
+
+#chatBox {
+  border: 1px solid #ccc;
+  height: 200px;
+  overflow-y: auto;
+  margin: 5px 45px;
+}
+
+#messageInput {
+  margin-left: 45px;
+}
+
+#chatBox {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bubble {
+  display: inline-block;           
+  max-width: 70%;
+  min-width: 120px;                
+  padding: 8px 10px 18px;
+  border-radius: 12px;
+  background: #f5f5f5;
+  position: relative;
+  word-break: break-word;
+}
+
+.bubble.other {
+  align-self: flex-start;
+  margin-right: auto;
+}
+
+.bubble.me {
+  align-self: flex-end;
+  margin-left: auto;
+  background: #e7f3ff;
+}
+
+.bubble .content, .bubble .text {
+  white-space: pre-wrap;
+  word-break: break-word;
+  hyphens: auto;
+}
+
+.bubble .meta {
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #888;
+}
+
+.bubble.pending .status { color: #999;   }
+.bubble.sent    .status { color: #4caf50;}
+.bubble.failed  .status { color: #e53935;}
+.bubble.failed {
+  border: 1px solid #e53935;
+  background: #fff1f1;
+}
+
+.bubble .retry {
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: bold;
+  border: 1px solid #bbb;
+  background: #fff;
+  border-radius: 8px;
+  margin-left: auto;
+  cursor: pointer;
+}
+
+.bubble .retry:hover { filter: brightness(0.98); }
+
+.bubble .ts {
+  position: absolute;
+  left: 10px;
+  bottom: 4px;
+  font-size: 11px;
+  color: #888;
+}
+
+.bubble.me .ts {
+  width: 60px;
+  left: auto;
+  right: 10px;
+  bottom: 4px;
+  text-align: right;
+}
+
+.msg-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.msg-row.other { justify-content: flex-start; }
+.msg-row.me  { justify-content: flex-end; }
+
+.side {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+
+  flex: 0 0 var(--side-w);
+  width: var(--side-w);
+}
+
+/* 연속 메시지에서 side를 만들지 않아도 여백 유지 */
+.msg-row.other.continued .bubble { margin-left: var(--side-w); }
+/* .msg-row.me.continued  .bubble { margin-right: var(--side-w); } */
+
+/* 연속 버블 살짝 붙게 */
+.bubble.compact { margin-top: 2px; }
+
+/* 아바타 모양 */
+.avatar {
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  border-radius: 50%;
+  background: #eaeef3;
+  box-shadow:
+    0 1px 2px rgba(0,0,0,0.06),
+    inset 0 0 0 1px rgba(0,0,0,0.05);
+}
+
+.avatar-initial {
+  font-size: 11px;
+  font-weight: 700;
+  color: #4b5563; /* gray-600 */
+  letter-spacing: .2px;
+  line-height: 1;
+  user-select: none;
+}

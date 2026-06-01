@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>채팅방 생성하기</title>
+    <link href="./assets/css/form.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  </head>
+
+  <body>
+    <h1 class="title">채팅방 생성하기</h1>
+
+    <form id="createForm">
+      <div>
+        <label>제목</label>
+        <input name="title" required maxlength="100" pattern=".*\S.*" placeholder="제목을 입력해 주세요 (공백만 입력 불가, 최대 100자)." />
+      </div>
+      <div>
+        <label>내용</label>
+        <textarea name="description" required maxlength="2000" pattern=".*\S.*" placeholder="내용을 입력해 주세요 (공백만 입력 불가, 최대 2000자)."></textarea>
+      </div>
+      <div>
+        <label>카테고리</label>
+        <select name="category">
+          <option value="CRYPTO_CURRENCY">CRYPTO_CURRENCY</option>
+        </select>
+      </div>
+      <button type="submit">생성</button>
+    </form>
+
+    <script type="module" src="./assets/js/create-chat-room.js"></script>
+  </body>
+</html>
