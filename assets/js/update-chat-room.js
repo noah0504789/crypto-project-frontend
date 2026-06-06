@@ -53,9 +53,14 @@ form.addEventListener('submit', (event) => {
     })
     .catch((err) => {
       const errors = err.response?.data?.errors;
-      if (!errors) return;
-      showFieldErrors(errors);
-      focusFirstError(errors);
+      if (errors) {
+        showFieldErrors(errors);
+        focusFirstError(errors);
+        return;
+      }
+
+      console.error('submit failed: ', err)
+      alert('요청 처리 중 문제가 발생했습니다.')
     })
     .finally(() => {
       submitBtn.disabled = false;
