@@ -82,9 +82,10 @@ function createLeaveBtn(roomId) {
   return createButton({
     text: '나가기',
     className: 'btn btn--danger',
-    onClick: (event) => {
+    onClick: function (event) {
       event.preventDefault();
-      const leaveBtn = event.currentTarget;
+      
+      const leaveBtn = this;
 
       if (leaveBtn.disabled) return;
 

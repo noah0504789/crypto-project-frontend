@@ -21,9 +21,10 @@ function appendRoom(room) {
 function createEnterBtn(roomId) {
   return createButton({
     text: '입장하기',
-    onClick: (event) => {
+    onClick: function (event) {
       event.preventDefault();
-      const enterBtn = event.currentTarget;
+
+      const enterBtn = this;
 
       if (enterBtn.disabled) return;
 
