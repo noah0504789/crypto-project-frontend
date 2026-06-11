@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import type { User } from '@/types/user';
 import type { MyChatRoom } from '@/types/chatRoom';
 import './MyChatRoomPage.css';
@@ -50,12 +51,14 @@ function formatDateTime(value: string | null) {
 }
 
 export default function MyChatRoomsPage({ user }: MyChatRoomsPageProps) {
+  const navigate = useNavigate();
+
   const [myChatRooms] = useState<MyChatRoom[]>(mockMyChatRooms);
 
   const isLoggedIn = user !== null;
 
   function handleEnterRoom(roomId: number) {
-    // 나중에 react-router-dom navigate 또는 기존 stomp chat 화면으로 연결
+    // 아직 React Router 안쪽 페이지가 아니라 기존 stomp 채팅 화면으로 이동하는 용도라서 href 유지
     window.location.href = `/stomp-chat?roomId=${roomId}`;
   }
 
@@ -67,7 +70,7 @@ export default function MyChatRoomsPage({ user }: MyChatRoomsPageProps) {
       category: room.category,
     });
 
-    window.location.href = `/update-chat-room?${params.toString()}`;
+    navigate(`/chat/update?${params.toString()}`);
   }
 
   function handleLeaveRoom(roomId: number) {
