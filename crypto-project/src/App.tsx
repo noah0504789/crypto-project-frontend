@@ -4,6 +4,7 @@ import Header from '@/components/Header/Header';
 import LoginModal from '@/components/Modal/LoginModal';
 import ChatPage from '@/pages/ChatPage';
 import MyChatRoomPage from '@/pages/MyChatRoomPage';
+import CreateChatRoomPage from '@/pages/CreateChatRoomPage';
 import UpdateChatRoomPage from '@/pages/UpdateChatRoomPage';
 import Footer from '@/components/Footer/Footer';
 import type { User } from '@/types/user';
@@ -87,6 +88,7 @@ export default function App() {
           <Route path="/" element={<h1>메인 페이지</h1>} />
           <Route path="/chat" element={<ChatPage user={user} />} />
           <Route path="/chat/my" element={<MyChatRoomPage user={user} />} />
+          <Route path="/chat/create" element={<CreateChatRoomPage />} />          
           <Route path="/chat/update" element={<UpdateChatRoomPage />} />          
         </Routes>
       </main>

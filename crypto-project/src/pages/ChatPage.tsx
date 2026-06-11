@@ -1,8 +1,8 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import type { User } from '@/types/user';
-import type { PopularChatRoom } from '@/types/chatRoom';
-import './ChatPage.css';
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import type { User } from "@/types/user";
+import type { PopularChatRoom } from "@/types/chatRoom";
+import "./ChatPage.css";
 
 type ChatPageProps = {
   user: User | null;
@@ -11,30 +11,30 @@ type ChatPageProps = {
 const mockPopularChatRooms: PopularChatRoom[] = [
   {
     id: 1,
-    title: '비트코인 단기 시황방',
-    description: 'BTC 단기 흐름과 주요 지지/저항을 이야기하는 방입니다.',
+    title: "비트코인 단기 시황방",
+    description: "BTC 단기 흐름과 주요 지지/저항을 이야기하는 방입니다.",
     popularity: 982,
     memberCnt: 128,
     hostId: 10,
-    createdAt: '2026-06-11T09:00:00',
+    createdAt: "2026-06-11T09:00:00",
   },
   {
     id: 2,
-    title: '이더리움 장기 투자방',
-    description: 'ETH 장기 관점, 생태계 뉴스, ETF 이슈를 공유합니다.',
+    title: "이더리움 장기 투자방",
+    description: "ETH 장기 관점, 생태계 뉴스, ETF 이슈를 공유합니다.",
     popularity: 741,
     memberCnt: 86,
     hostId: 12,
-    createdAt: '2026-06-10T20:30:00',
+    createdAt: "2026-06-10T20:30:00",
   },
   {
     id: 3,
-    title: '알트코인 관찰방',
-    description: '알트코인 급등락, 거래량, 테마 코인을 함께 봅니다.',
+    title: "알트코인 관찰방",
+    description: "알트코인 급등락, 거래량, 테마 코인을 함께 봅니다.",
     popularity: 523,
     memberCnt: 64,
     hostId: 15,
-    createdAt: '2026-06-09T18:10:00',
+    createdAt: "2026-06-09T18:10:00",
   },
 ];
 
@@ -59,9 +59,9 @@ export default function ChatPage({ user }: ChatPageProps) {
               내 채팅방
             </Link>
 
-            <button type="button" className="create-chat-room-button">
+            <Link to="/chat/create" className="create-chat-room-button">
               채팅방 생성
-            </button>
+            </Link>
           </div>
         )}
       </div>

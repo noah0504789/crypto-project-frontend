@@ -1,0 +1,127 @@
+.create-chat-room-page {
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.create-chat-room-card {
+  padding: 28px;
+
+  border: 1px solid #e5e7eb;
+  border-radius: 20px;
+
+  background: #ffffff;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+}
+
+.create-chat-room-header {
+  margin-bottom: 24px;
+}
+
+.create-chat-room-header h1 {
+  margin: 0;
+
+  color: #111827;
+  font-size: 28px;
+  font-weight: 850;
+  letter-spacing: -0.04em;
+}
+
+.create-chat-room-header p {
+  margin: 8px 0 0;
+
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.create-chat-room-form {
+  display: grid;
+  gap: 18px;
+}
+
+.create-chat-room-field {
+  display: grid;
+  gap: 8px;
+}
+
+.create-chat-room-field span {
+  color: #374151;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.create-chat-room-field input,
+.create-chat-room-field textarea,
+.create-chat-room-field select {
+  width: 100%;
+  padding: 12px 14px;
+
+  border: 1px solid #d1d5db;
+  border-radius: 12px;
+
+  background: #ffffff;
+  color: #111827;
+
+  font-size: 14px;
+  outline: none;
+}
+
+.create-chat-room-field textarea {
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.create-chat-room-field input:focus,
+.create-chat-room-field textarea:focus,
+.create-chat-room-field select:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
+}
+
+.create-chat-room-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+
+  margin-top: 8px;
+}
+
+.create-chat-room-cancel-button,
+.create-chat-room-submit-button {
+  height: 40px;
+  padding: 0 16px;
+
+  border-radius: 999px;
+
+  font-size: 14px;
+  font-weight: 850;
+
+  cursor: pointer;
+}
+
+.create-chat-room-cancel-button {
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  color: #374151;
+}
+
+.create-chat-room-cancel-button:hover {
+  background: #f3f4f6;
+  color: #111827;
+}
+
+.create-chat-room-submit-button {
+  border: 1px solid #2563eb;
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.create-chat-room-submit-button:hover {
+  border-color: #1d4ed8;
+  background: #1d4ed8;
+}
+
+.create-chat-room-submit-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

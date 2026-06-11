@@ -22,49 +22,51 @@
 
 .my-chat-button,
 .create-chat-room-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
   height: 38px;
   padding: 0 14px;
 
+  border: 1px solid #bfdbfe;
   border-radius: 999px;
 
   font-size: 14px;
   font-weight: 800;
+  text-decoration: none;
 
   cursor: pointer;
 
   transition:
     background-color 0.15s ease,
     color 0.15s ease,
-    border-color 0.15s ease,
     transform 0.15s ease,
     box-shadow 0.15s ease;
 }
 
 .my-chat-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  text-decoration: none;
-}
-
-.my-chat-button:hover {
-  background: #f3f4f6;
-  color: #111827;
-  transform: translateY(-1px);
+  background: #eff6ff;
+  color: #1d4ed8;
 }
 
 .create-chat-room-button {
-  border: 1px solid #2563eb;
   background: #2563eb;
   color: #ffffff;
 }
 
+.my-chat-button:hover {
+  background: #dbeafe;
+  color: #1e40af;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.12);
+}
+
 .create-chat-room-button:hover {
   background: #1d4ed8;
-  border-color: #1d4ed8;
+  color: #ffffff;
   transform: translateY(-1px);
-  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.22);
+  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.18);
 }
 
 .chat-page-eyebrow {
