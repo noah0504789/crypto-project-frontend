@@ -58,8 +58,7 @@ export default function MyChatRoomsPage({ user }: MyChatRoomsPageProps) {
   const isLoggedIn = user !== null;
 
   function handleEnterRoom(roomId: number) {
-    // 아직 React Router 안쪽 페이지가 아니라 기존 stomp 채팅 화면으로 이동하는 용도라서 href 유지
-    window.location.href = `/stomp-chat?roomId=${roomId}`;
+    navigate(`/chat/room?roomId=${roomId}`);
   }
 
   function handleUpdateRoom(room: MyChatRoom) {

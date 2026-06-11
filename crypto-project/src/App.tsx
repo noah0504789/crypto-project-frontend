@@ -10,6 +10,7 @@ import ChatPage from '@/pages/ChatPage';
 import MyChatRoomPage from '@/pages/MyChatRoomPage';
 import CreateChatRoomPage from '@/pages/CreateChatRoomPage';
 import UpdateChatRoomPage from '@/pages/UpdateChatRoomPage';
+import ChatRoomPage from '@/pages/ChatRoomPage';
 import PriceAlertsPage from '@/pages/PriceAlertsPage';
 import Footer from '@/components/Footer/Footer';
 import './App.css';
@@ -88,6 +89,7 @@ export default function App() {
           <Route path="/chat/my" element={<MyChatRoomPage user={user} />} />
           <Route path="/chat/create" element={<CreateChatRoomPage />} />
           <Route path="/chat/update" element={<UpdateChatRoomPage />} />
+          <Route path="/chat/room" element={<ChatRoomPage user={user} />} />
           <Route path="/price-alerts" element={<PriceAlertsPage user={user} />} />
         </Routes>
       </main>

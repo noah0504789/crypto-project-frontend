@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from 'react-router-dom';
 import type { User } from "@/types/user";
 import type { PopularChatRoom } from "@/types/chatRoom";
 import "./ChatPage.css";
@@ -39,6 +39,8 @@ const mockPopularChatRooms: PopularChatRoom[] = [
 ];
 
 export default function ChatPage({ user }: ChatPageProps) {
+  const navigate = useNavigate();
+
   const [popularChatRooms] = useState<PopularChatRoom[]>(mockPopularChatRooms);
 
   const isLoggedIn = user !== null;
@@ -49,7 +51,7 @@ export default function ChatPage({ user }: ChatPageProps) {
       return;
     }
 
-    console.log('enter room:', roomId);
+    navigate(`/chat/room?roomId=${roomId}`);
   }
 
   return (
