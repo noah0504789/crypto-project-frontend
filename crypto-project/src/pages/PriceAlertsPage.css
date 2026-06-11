@@ -1,0 +1,229 @@
+.price-alerts-page {
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.price-alerts-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+
+  margin-bottom: 24px;
+}
+
+.price-alerts-header h1 {
+  margin: 0;
+
+  color: #111827;
+  font-size: 28px;
+  font-weight: 900;
+}
+
+.price-alerts-header p {
+  margin: 8px 0 0;
+
+  color: #6b7280;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.price-alerts-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.price-alerts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.price-alert-card {
+  display: grid;
+  grid-template-columns: 120px 1fr 220px;
+  align-items: center;
+  gap: 18px;
+
+  padding: 18px 20px;
+
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+
+  background: #ffffff;
+
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
+}
+
+.price-alert-card.enabled {
+  border-color: #bfdbfe;
+  background: #eff6ff;
+  box-shadow: 0 10px 24px rgba(37, 99, 235, 0.08);
+}
+
+.price-alert-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 26px rgba(15, 23, 42, 0.08);
+}
+
+.price-alert-check-area {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  color: #374151;
+  font-size: 14px;
+  font-weight: 800;
+
+  cursor: pointer;
+}
+
+.price-alert-check-area input {
+  width: 18px;
+  height: 18px;
+
+  cursor: pointer;
+}
+
+.price-alert-check-label {
+  white-space: nowrap;
+}
+
+.price-alert-coin-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.price-alert-coin-info strong {
+  color: #111827;
+  font-size: 17px;
+  font-weight: 900;
+}
+
+.price-alert-coin-info span {
+  color: #6b7280;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.price-alert-rate-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.price-alert-rate-field label {
+  color: #4b5563;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.price-alerts-submit-area {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+
+  padding: 18px 20px;
+
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+
+  background: #f8fafc;
+}
+
+.price-alerts-submit-area p {
+  margin: 0;
+
+  color: #4b5563;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.price-alerts-submit-area strong {
+  color: #1d4ed8;
+  font-weight: 900;
+}
+
+.price-alerts-submit-button {
+  flex-shrink: 0;
+
+  height: 42px;
+  padding: 0 18px;
+
+  border: none;
+  border-radius: 999px;
+
+  background: #2563eb;
+  color: #ffffff;
+
+  font-size: 14px;
+  font-weight: 900;
+
+  cursor: pointer;
+
+  transition:
+    background-color 0.15s ease,
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.price-alerts-submit-button:hover:not(:disabled) {
+  background: #1d4ed8;
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(37, 99, 235, 0.2);
+}
+
+.price-alerts-submit-button:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+}
+
+.price-alerts-empty-card {
+  max-width: 520px;
+  margin: 80px auto 0;
+  padding: 36px 28px;
+
+  border: 1px solid #e5e7eb;
+  border-radius: 22px;
+
+  background: #ffffff;
+  text-align: center;
+}
+
+.price-alerts-empty-card h1 {
+  margin: 0 0 10px;
+
+  color: #111827;
+  font-size: 26px;
+  font-weight: 900;
+}
+
+.price-alerts-empty-card p {
+  margin: 0;
+
+  color: #6b7280;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+@media (max-width: 720px) {
+  .price-alert-card {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .price-alerts-submit-area {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .price-alerts-submit-button {
+    width: 100%;
+  }
+}

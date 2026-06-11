@@ -1,5 +1,8 @@
 import { useState } from 'react';
 import { Routes, Route } from 'react-router-dom';
+import type { User } from '@/types/user';
+import type { Notification, UpbitTickerAlertEvent } from '@/types/notification';
+import { mapUpbitTickerAlertToNotification } from '@/utils/notificationMapper';
 import Header from '@/components/Header/Header';
 import LoginModal from '@/components/Modal/LoginModal';
 import HomePage from '@/pages/HomePage';
@@ -7,10 +10,8 @@ import ChatPage from '@/pages/ChatPage';
 import MyChatRoomPage from '@/pages/MyChatRoomPage';
 import CreateChatRoomPage from '@/pages/CreateChatRoomPage';
 import UpdateChatRoomPage from '@/pages/UpdateChatRoomPage';
+import PriceAlertsPage from '@/pages/PriceAlertsPage';
 import Footer from '@/components/Footer/Footer';
-import type { User } from '@/types/user';
-import type { Notification, UpbitTickerAlertEvent } from '@/types/notification';
-import { mapUpbitTickerAlertToNotification } from '@/utils/notificationMapper';
 import './App.css';
 
 export default function App() {
@@ -87,6 +88,7 @@ export default function App() {
           <Route path="/chat/my" element={<MyChatRoomPage user={user} />} />
           <Route path="/chat/create" element={<CreateChatRoomPage />} />
           <Route path="/chat/update" element={<UpdateChatRoomPage />} />
+          <Route path="/price-alerts" element={<PriceAlertsPage user={user} />} />
         </Routes>
       </main>
 
