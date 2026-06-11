@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState } from "react";
-import { Link } from 'react-router-dom';
-import type { User } from "@/types/user";
-import type { Notification } from "@/types/notification";
-import logoIcon from "@/assets/icon.png";
-import "./Header.css";
+import { useEffect, useRef, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import type { User } from '@/types/user';
+import type { Notification } from '@/types/notification';
+import { formatKoreanDateTime } from '@/utils/dateFormatter';
+import logoIcon from '@/assets/icon.png';
+import './Header.css';
 
 type HeaderProps = {
   user: User | null;
@@ -20,8 +21,11 @@ export default function Header({
   onLogin,
   onLogout,
 }: HeaderProps) {
+  const navigate = useNavigate();
+
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [isNotificationMenuOpen, setIsNotificationMenuOpen] = useState(false);
+
   const notificationMenuRef = useRef<HTMLDivElement | null>(null);
   const profileMenuRef = useRef<HTMLDivElement | null>(null);
 
@@ -36,6 +40,7 @@ export default function Header({
       const isOutsideNotificationMenu =
         notificationMenuRef.current &&
         !notificationMenuRef.current.contains(target);
+
       const isOutsideProfileMenu =
         profileMenuRef.current && !profileMenuRef.current.contains(target);
 
@@ -48,16 +53,32 @@ export default function Header({
       }
     }
 
-    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener('mousedown', handleClickOutside);
 
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
+
+  function handleClickPriceAlerts(event: React.MouseEvent<HTMLAnchorElement>) {
+    if (!user) {
+      event.preventDefault();
+      alert('로그인이 필요한 서비스입니다.');
+    }
+  }
 
   function handleToggleNotificationMenu() {
     setIsNotificationMenuOpen((prev) => !prev);
     setIsProfileMenuOpen(false);
+  }
+
+  function handleClickNotification(notification: Notification) {
+    onReadNotification(notification.id);
+
+    if (notification.link) {
+      setIsNotificationMenuOpen(false);
+      navigate(notification.link);
+    }
   }
 
   function handleToggleProfileMenu() {
@@ -68,13 +89,6 @@ export default function Header({
   function handleLogout() {
     setIsProfileMenuOpen(false);
     onLogout();
-  }
-
-  function handleClickPriceAlerts(event: React.MouseEvent<HTMLAnchorElement>) {
-    if (!user) {
-      event.preventDefault();
-      alert('로그인이 필요한 서비스입니다.');
-    }
   }
 
   return (
@@ -88,7 +102,7 @@ export default function Header({
       <nav className="header-nav" aria-label="주요 메뉴">
         <Link to="/chat" className="header-nav-link" aria-label="채팅으로 이동">
           <span className="header-nav-icon">💬</span>
-          <span>오픈 채팅</span>
+          <span>채팅</span>
         </Link>
 
         <Link
@@ -105,10 +119,7 @@ export default function Header({
       <div className="header-right">
         {user ? (
           <div className="user-menu">
-            <div
-              className="notification-menu-wrapper"
-              ref={notificationMenuRef}
-            >
+            <div className="notification-menu-wrapper" ref={notificationMenuRef}>
               <button
                 type="button"
                 className="notification-button"
@@ -120,7 +131,7 @@ export default function Header({
                 {unreadNotificationCount > 0 && (
                   <span className="notification-badge">
                     {unreadNotificationCount > 99
-                      ? "99+"
+                      ? '99+'
                       : unreadNotificationCount}
                   </span>
                 )}
@@ -135,28 +146,41 @@ export default function Header({
                   {notifications.length > 0 ? (
                     <div className="notification-list">
                       {notifications.map((notification) => (
-                        <a
+                        <button
                           key={notification.id}
-                          href={notification.link}
+                          type="button"
                           className={`notification-item ${
-                            notification.read ? "read" : "unread"
+                            notification.read ? 'read' : 'unread'
                           }`}
-                          onClick={() => onReadNotification(notification.id)}
+                          onClick={() => handleClickNotification(notification)}
                         >
                           <div className="notification-item-content">
                             <div className="notification-item-title-row">
                               <strong>{notification.title}</strong>
+
                               {!notification.read && (
                                 <span className="notification-unread-dot" />
                               )}
                             </div>
 
-                            <p>{notification.message}</p>
+                            {notification.messageParts ? (
+                              <p className="notification-message">
+                                {notification.messageParts.map((part, index) => (
+                                  <span key={`${part.text}-${index}`}>
+                                    {part.bold ? <strong>{part.text}</strong> : part.text}
+                                    {part.lineBreakAfter && <br />}
+                                  </span>
+                                ))}
+                              </p>
+                            ) : (
+                              <p className="notification-message">{notification.message}</p>
+                            )}
+
                             <span className="notification-time">
-                              {notification.createdAt}
+                              {formatKoreanDateTime(notification.createdAt)}
                             </span>
                           </div>
-                        </a>
+                        </button>
                       ))}
                     </div>
                   ) : (
@@ -205,9 +229,9 @@ export default function Header({
 
                   <div className="profile-dropdown-divider" />
 
-                  <a href="/profile" className="profile-dropdown-item">
+                  <Link to="/profile" className="profile-dropdown-item">
                     프로필 수정
-                  </a>
+                  </Link>
 
                   <button
                     type="button"
