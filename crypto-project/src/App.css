@@ -1,8 +1,11 @@
 .app {
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
   background: #ffffff;
 }
 
 .main {
+  flex: 1;
   padding: 24px;
 }

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Header from '@/components/Header/Header';
 import LoginModal from '@/components/Modal/LoginModal';
+import Footer from '@/components/Footer/Footer';
 import type { User } from '@/types/user';
 import type { Notification } from '@/types/notification';
 
@@ -79,6 +80,8 @@ export default function App() {
       <main className="main">
         <h1>메인 페이지</h1>
       </main>
+
+      <Footer />
 
       <LoginModal isOpen={isLoginModalOpen} onClose={handleCloseLoginModal} />
     </div>
