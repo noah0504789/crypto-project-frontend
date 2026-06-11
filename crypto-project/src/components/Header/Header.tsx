@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import type { User } from '@/types/user';
 import type { Notification } from '@/types/notification';
 import { formatKoreanDateTime } from '@/utils/dateFormatter';
+import { saveRedirectAfterLogin } from '@/utils/authStorage';
 import logoIcon from '@/assets/icon.png';
 import './Header.css';
 
@@ -63,7 +64,10 @@ export default function Header({
   function handleClickPriceAlerts(event: React.MouseEvent<HTMLAnchorElement>) {
     if (!user) {
       event.preventDefault();
+
+      saveRedirectAfterLogin('/price-alerts');
       alert('로그인이 필요한 서비스입니다.');
+      onLogin();
     }
   }
 

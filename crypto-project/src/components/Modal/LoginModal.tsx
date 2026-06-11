@@ -1,14 +1,12 @@
-import googleLogo from "@/assets/google-logo.png";
-import kakaoLogo from "@/assets/kakao-logo.png";
-import "./LoginModal.css";
+import googleLogo from '@/assets/google-logo.png';
+import kakaoLogo from '@/assets/kakao-logo.png';
+import { getOAuthLoginUrl } from '@/apis/authApi';
+import './LoginModal.css';
 
 type LoginModalProps = {
   isOpen: boolean;
   onClose: () => void;
 };
-
-const GOOGLE_LOGIN_URL = "/oauth2/authorization/google";
-const KAKAO_LOGIN_URL = "/oauth2/authorization/kakao";
 
 export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
   if (!isOpen) return null;
@@ -31,14 +29,20 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
         </div>
 
         <div className="oauth-login-list">
-          <a className="oauth-login-button google" href={GOOGLE_LOGIN_URL}>
+          <a
+            className="oauth-login-button google"
+            href={getOAuthLoginUrl('google')}
+          >
             <span className="oauth-icon-box">
               <img src={googleLogo} alt="" className="oauth-logo" />
             </span>
             <span className="oauth-button-text">Google로 계속하기</span>
           </a>
 
-          <a className="oauth-login-button kakao" href={KAKAO_LOGIN_URL}>
+          <a
+            className="oauth-login-button kakao"
+            href={getOAuthLoginUrl('kakao')}
+          >
             <span className="oauth-icon-box">
               <img src={kakaoLogo} alt="" className="oauth-logo" />
             </span>
@@ -46,7 +50,10 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
           </a>
         </div>
 
-        <p className="login-modal-guide">로그인 시 서비스 이용약관 및 개인정보 처리방침에 동의한 것으로 간주됩니다.</p>
+        <p className="login-modal-guide">
+          로그인 시 서비스 이용약관 및 개인정보 처리방침에 동의한 것으로
+          간주됩니다.
+        </p>
       </section>
     </div>
   );

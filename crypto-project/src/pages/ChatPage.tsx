@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from 'react-router-dom';
 import type { User } from "@/types/user";
 import type { PopularChatRoom } from "@/types/chatRoom";
+import { saveRedirectAfterLogin } from '@/utils/authStorage';
 import "./ChatPage.css";
 
 type ChatPageProps = {
@@ -47,6 +48,7 @@ export default function ChatPage({ user }: ChatPageProps) {
 
   function handleEnterRoom(roomId: number) {
     if (!isLoggedIn) {
+      saveRedirectAfterLogin(`/chat/room?roomId=${roomId}`);
       alert('로그인이 필요한 서비스입니다.');
       return;
     }
