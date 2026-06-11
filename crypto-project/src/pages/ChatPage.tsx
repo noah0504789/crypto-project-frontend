@@ -43,6 +43,15 @@ export default function ChatPage({ user }: ChatPageProps) {
 
   const isLoggedIn = user !== null;
 
+  function handleEnterRoom(roomId: number) {
+    if (!isLoggedIn) {
+      alert('로그인이 필요한 서비스입니다.');
+      return;
+    }
+
+    console.log('enter room:', roomId);
+  }
+
   return (
     <section className="chat-page">
       <div className="chat-page-header">
@@ -88,11 +97,13 @@ export default function ChatPage({ user }: ChatPageProps) {
               </div>
             </div>
 
-            {isLoggedIn && (
-              <button type="button" className="popular-chat-room-enter-button">
-                입장하기
-              </button>
-            )}
+            <button
+              type="button"
+              className="popular-chat-room-enter-button"
+              onClick={() => handleEnterRoom(room.id)}
+            >
+              입장하기
+            </button>
           </article>
         ))}
       </div>
