@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Link } from 'react-router-dom';
 import type { User } from "@/types/user";
 import type { Notification } from "@/types/notification";
 import logoIcon from "@/assets/icon.png";
@@ -72,21 +73,21 @@ export default function Header({
   return (
     <header className="header">
       <div className="header-left">
-        <a href="/" className="home-link" aria-label="홈으로 이동">
+        <Link to="/" className="home-link" aria-label="홈으로 이동">
           <img src={logoIcon} alt="Home" className="home-logo" />
-        </a>
+        </Link>
       </div>
 
       <nav className="header-nav" aria-label="주요 메뉴">
-        <a href="/chat" className="header-nav-link" aria-label="채팅으로 이동">
+        <Link to="/chat" className="header-nav-link" aria-label="채팅으로 이동">
           <span className="header-nav-icon">💬</span>
-          <span>채팅</span>
-        </a>
+          <span>오픈 채팅</span>
+        </Link>
 
-        <a href="/price-alerts" className="header-nav-link" aria-label="가격 알림으로 이동">
+        <Link to="/price-alerts" className="header-nav-link" aria-label="가격 알림으로 이동">
           <span className="header-nav-icon">⏰</span>
           <span>가격 알림</span>
-        </a>
+        </Link>
       </nav>
 
       <div className="header-right">

@@ -1,9 +1,12 @@
 import { useState } from 'react';
+import { Routes, Route } from 'react-router-dom';
 import Header from '@/components/Header/Header';
 import LoginModal from '@/components/Modal/LoginModal';
+import ChatPage from '@/pages/ChatPage';
 import Footer from '@/components/Footer/Footer';
 import type { User } from '@/types/user';
 import type { Notification } from '@/types/notification';
+import './App.css';
 
 export default function App() {
   const [user, setUser] = useState<User | null>({
@@ -78,7 +81,10 @@ export default function App() {
       />
 
       <main className="main">
-        <h1>메인 페이지</h1>
+        <Routes>
+          <Route path="/" element={<h1>메인 페이지</h1>} />
+          <Route path="/chat" element={<ChatPage user={user} />} />
+        </Routes>
       </main>
 
       <Footer />
