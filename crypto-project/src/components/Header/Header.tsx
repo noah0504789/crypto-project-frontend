@@ -29,9 +29,9 @@ export default function Header({
   const notificationMenuRef = useRef<HTMLDivElement | null>(null);
   const profileMenuRef = useRef<HTMLDivElement | null>(null);
 
-  const unreadNotificationCount = notifications.filter(
+  const hasUnreadNotification = notifications.some(
     (notification) => !notification.read,
-  ).length;
+  );
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -127,14 +127,7 @@ export default function Header({
                 onClick={handleToggleNotificationMenu}
               >
                 <span className="notification-icon">🔔</span>
-
-                {unreadNotificationCount > 0 && (
-                  <span className="notification-badge">
-                    {unreadNotificationCount > 99
-                      ? '99+'
-                      : unreadNotificationCount}
-                  </span>
-                )}
+                {hasUnreadNotification && <span className="notification-badge" />}
               </button>
 
               {isNotificationMenuOpen && (
