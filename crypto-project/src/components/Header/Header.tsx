@@ -70,6 +70,13 @@ export default function Header({
     onLogout();
   }
 
+  function handleClickPriceAlerts(event: React.MouseEvent<HTMLAnchorElement>) {
+    if (!user) {
+      event.preventDefault();
+      alert('로그인이 필요한 서비스입니다.');
+    }
+  }
+
   return (
     <header className="header">
       <div className="header-left">
@@ -84,7 +91,12 @@ export default function Header({
           <span>오픈 채팅</span>
         </Link>
 
-        <Link to="/price-alerts" className="header-nav-link" aria-label="가격 알림으로 이동">
+        <Link
+          to="/price-alerts"
+          className="header-nav-link"
+          aria-label="가격 알림으로 이동"
+          onClick={handleClickPriceAlerts}
+        >
           <span className="header-nav-icon">⏰</span>
           <span>가격 알림</span>
         </Link>
