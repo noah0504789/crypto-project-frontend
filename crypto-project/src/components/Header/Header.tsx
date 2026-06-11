@@ -77,6 +77,18 @@ export default function Header({
         </a>
       </div>
 
+      <nav className="header-nav" aria-label="주요 메뉴">
+        <a href="/chat" className="header-nav-link" aria-label="채팅으로 이동">
+          <span className="header-nav-icon">💬</span>
+          <span>채팅</span>
+        </a>
+
+        <a href="/price-alerts" className="header-nav-link" aria-label="가격 알림으로 이동">
+          <span className="header-nav-icon">⏰</span>
+          <span>가격 알림</span>
+        </a>
+      </nav>
+
       <div className="header-right">
         {user ? (
           <div className="user-menu">
