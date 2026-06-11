@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import type { User } from '@/types/user';
 import type { PopularChatRoom } from '@/types/chatRoom';
 import './ChatPage.css';
@@ -54,9 +55,9 @@ export default function ChatPage({ user }: ChatPageProps) {
 
         {isLoggedIn && (
           <div className="chat-page-actions">
-            <button type="button" className="my-chat-button">
+            <Link to="/chat/my" className="my-chat-button">
               내 채팅방
-            </button>
+            </Link>
 
             <button type="button" className="create-chat-room-button">
               채팅방 생성

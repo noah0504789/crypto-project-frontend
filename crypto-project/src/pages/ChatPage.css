@@ -41,9 +41,11 @@
 }
 
 .my-chat-button {
-  border: 1px solid #d1d5db;
-  background: #ffffff;
-  color: #374151;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  text-decoration: none;
 }
 
 .my-chat-button:hover {

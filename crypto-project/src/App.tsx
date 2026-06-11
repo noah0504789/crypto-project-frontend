@@ -3,6 +3,7 @@ import { Routes, Route } from 'react-router-dom';
 import Header from '@/components/Header/Header';
 import LoginModal from '@/components/Modal/LoginModal';
 import ChatPage from '@/pages/ChatPage';
+import MyChatRoomPage from '@/pages/MyChatRoomPage';
 import Footer from '@/components/Footer/Footer';
 import type { User } from '@/types/user';
 import type { Notification } from '@/types/notification';
@@ -84,6 +85,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<h1>메인 페이지</h1>} />
           <Route path="/chat" element={<ChatPage user={user} />} />
+          <Route path="/chat/my" element={<MyChatRoomPage user={user} />} />
         </Routes>
       </main>
 

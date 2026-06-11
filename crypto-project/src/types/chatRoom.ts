@@ -19,3 +19,26 @@ export type PopularChatRoomCursor = {
   lastId?: number;
   lastPopularity?: number;
 };
+
+export type MyChatRoom = {
+  id: number;
+  hostId: number;
+  title: string;
+  category: ChatRoomCategory;
+  description: string;
+  lastMsgContent: string | null;
+  lastMsgCreatedAt: string | null;
+  unreadMsgCnt: number;
+  memberCnt: number;
+};
+
+export type MyChatRoomResponse = {
+  items: MyChatRoom[];
+  hasNext: boolean;
+};
+
+export type MyChatRoomCursor = {
+  lastUnreadFlag?: boolean;
+  lastMsgCreatedAt?: string | null;
+  lastId?: number;
+};
