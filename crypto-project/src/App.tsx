@@ -1,8 +1,10 @@
 import { useState } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, useNavigate } from 'react-router-dom';
 import type { User } from '@/types/user';
 import type { Notification, UpbitTickerAlertEvent } from '@/types/notification';
+import { logout } from '@/apis/authApi';
 import { mapUpbitTickerAlertToNotification } from '@/utils/notificationMapper';
+import { removeAccessToken } from '@/utils/authStorage';
 import Header from '@/components/Header/Header';
 import LoginModal from '@/components/Modal/LoginModal';
 import HomePage from '@/pages/HomePage';
@@ -17,15 +19,15 @@ import Footer from '@/components/Footer/Footer';
 import './App.css';
 
 export default function App() {
+  const navigate = useNavigate();
+
   const [user, setUser] = useState<User | null>({
     id: 1,
     name: 'noah',
     email: 'noah0969@gmail.com',
     profileImageUrl: '',
   });
-
   const [notifications, setNotifications] = useState<Notification[]>([]);
-
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
   function handleOpenLoginModal() {
@@ -36,8 +38,18 @@ export default function App() {
     setIsLoginModalOpen(false);
   }
 
-  function handleLogout() {
-    setUser(null);
+  async function handleLogout() {
+    try {
+      await logout();
+    } catch (error) {
+      console.error('logout failed:', error);
+      alert('로그아웃 처리 중 문제가 발생했습니다.');
+    } finally {
+      removeAccessToken();
+      setUser(null);
+      setNotifications([]);
+      navigate('/', { replace: true });
+    }
   }
 
   function handleReceiveUpbitTickerAlert(event: UpbitTickerAlertEvent) {
