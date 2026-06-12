@@ -233,3 +233,23 @@
   transform: none;
   box-shadow: none;
 }
+
+.popular-chat-room-empty-card {
+  max-width: 520px;
+  margin: 60px auto;
+  padding: 32px;
+
+  border: 1px solid #e5e7eb;
+  border-radius: 20px;
+
+  background: #ffffff;
+  text-align: center;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+}
+
+.popular-chat-room-empty-card p {
+  margin: 0;
+
+  color: #6b7280;
+  font-size: 14px;
+}

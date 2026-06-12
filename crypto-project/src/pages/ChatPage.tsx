@@ -180,7 +180,7 @@ export default function ChatPage({ user }: ChatPageProps) {
           )}
         </>
       ) : (
-        <div className="popular-chat-room-empty-card">
+        <div className="popular-chat-room-empty-card">          
           아직 인기 채팅방이 없습니다.
         </div>
       )}
