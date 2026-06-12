@@ -14,6 +14,42 @@ type MyChatRoomsPageProps = {
 };
 
 const MY_CHAT_ROOM_LIMIT = 10;
+const mockMyChatRooms: MyChatRoom[] = [
+  {
+    id: 101,
+    hostId: 1,
+    title: '비트코인 단기 시황방',
+    category: 'CRYPTO_CURRENCY',
+    description: 'BTC 단기 흐름과 주요 지지/저항을 이야기하는 방입니다.',
+    lastMsgContent: '오늘 저항선은 108K 부근으로 보입니다.',
+    lastMsgCreatedAt: '2026-06-11T10:10:00',
+    unreadMsgCnt: 3,
+    memberCnt: 128,
+  },
+  {
+    id: 102,
+    hostId: 12,
+    title: '이더리움 장기 투자방',
+    category: 'CRYPTO_CURRENCY',
+    description: 'ETH 장기 관점과 생태계 뉴스를 공유합니다.',
+    lastMsgContent: 'ETF 자금 유입 체크해볼게요.',
+    lastMsgCreatedAt: '2026-06-11T09:40:00',
+    unreadMsgCnt: 0,
+    memberCnt: 86,
+  },
+  {
+    id: 103,
+    hostId: 1,
+    title: '알트코인 관찰방',
+    category: 'CRYPTO_CURRENCY',
+    description: '거래량과 테마 중심으로 알트코인을 함께 봅니다.',
+    lastMsgContent: null,
+    lastMsgCreatedAt: null,
+    unreadMsgCnt: 0,
+    memberCnt: 64,
+  },
+];
+
 
 export default function MyChatRoomsPage({ user }: MyChatRoomsPageProps) {
   const isLoggedIn = user !== null;
@@ -50,7 +86,8 @@ export default function MyChatRoomsPage({ user }: MyChatRoomsPageProps) {
         console.error('failed to load my chat rooms:', error);
 
         if (!isCancelled) {          
-          setMyChatRooms([]);
+          // setMyChatRooms([]);
+          setMyChatRooms(mockMyChatRooms);
           setHasNext(false);
         }
       } finally {

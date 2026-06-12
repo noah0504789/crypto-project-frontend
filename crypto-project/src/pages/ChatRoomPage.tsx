@@ -1,120 +1,134 @@
-import { useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
-import type { User } from '@/types/user';
-import type { ChatMessage } from '@/types/chatMessage';
-import { formatKoreanChatTime } from '@/utils/dateFormatter';
-import './ChatRoomPage.css';
+import { useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
+import type { User } from "@/types/user";
+import type { ChatMessage } from "@/types/chatMessage";
+import { createChatMessage, isValidRoomId, getAvatarText } from "@/utils/chatMessageUtils";
+import { formatKoreanChatTime } from "@/utils/dateFormatter";
+import LoadingButton from "@/components/Button/LoadingButton";
+import "./ChatRoomPage.css";
 
 type ChatRoomPageProps = {
   user: User | null;
 };
 
-const mockMessages: ChatMessage[] = [
+const roomTitle = "비트코인 단기 시황방";
+const mockChatMessages: ChatMessage[] = [
   {
     id: 1,
     roomId: 101,
     writerId: 2,
-    writerName: '민수',
-    content: '오늘 BTC 흐름 괜찮아 보이네요.',
-    createdAt: '2026-06-11T08:30:00.000Z',
-    status: 'sent',
+    writerName: "coinWatcher",
+    content: "오늘 비트코인 거래량이 꽤 올라왔네요.",
+    createdAt: "2026-06-11T10:10:00",
+    status: "sent",
   },
   {
     id: 2,
     roomId: 101,
-    writerId: 3,
-    writerName: '지훈',
-    content: '저항선은 145M 근처로 보고 있어요.',
-    createdAt: '2026-06-11T08:34:00.000Z',
-    status: 'sent',
+    writerId: 1,
+    writerName: "나",
+    content: "108K 부근 저항 확인하고 들어가는 게 좋아 보입니다.",
+    createdAt: "2026-06-11T10:12:00",
+    status: "sent",
   },
   {
     id: 3,
     roomId: 101,
+    writerId: 3,
+    writerName: "ethLong",
+    content:
+      "알트는 아직 비트 방향성 확인하고 보는 게 안전할 것 같아요. 특히 거래량 없는 종목은 조심해야 할 듯합니다.",
+    createdAt: "2026-06-11T10:15:00",
+    status: "sent",
+  },
+  {
+    id: 4,
+    roomId: 101,
     writerId: 1,
-    writerName: 'noah',
-    content: '일단 거래량 더 보고 들어가야겠네요.',
-    createdAt: '2026-06-11T08:36:00.000Z',
-    status: 'sent',
+    writerName: "나",
+    content: "오케이. 일단 관망하면서 눌림목만 보겠습니다.",
+    createdAt: "2026-06-11T10:18:00",
+    status: "failed",
   },
 ];
 
 export default function ChatRoomPage({ user }: ChatRoomPageProps) {
   const [searchParams] = useSearchParams();
-  const roomId = searchParams.get('roomId');
 
-  const [messages, setMessages] = useState<ChatMessage[]>(mockMessages);
-  const [messageInput, setMessageInput] = useState('');
+  const roomIdParam = searchParams.get("roomId");
+  const roomId = roomIdParam ? Number(roomIdParam) : NaN;
+
+  const [messages, setMessages] = useState<ChatMessage[]>(mockChatMessages);
+  const [messageInput, setMessageInput] = useState("");
+  const [isConnected] = useState(true);
 
   const isLoggedIn = user !== null;
+  const isInvalidRoomId = !isValidRoomId(roomId);
+  const hasPendingMessage = messages.some(
+    (message) => message.status === "pending",
+  );
 
-  function handleChangeMessageInput(
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) {
-    setMessageInput(event.target.value);
-  }
+  const canSend =
+    isLoggedIn &&
+    !isInvalidRoomId &&
+    isConnected &&
+    messageInput.trim().length > 0;
 
-  function handleSendMessage() {
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
     const content = messageInput.trim();
 
-    if (!content) {
+    if (!canSend || !user) {
       return;
     }
 
-    if (!user) {
-      alert('로그인이 필요한 서비스입니다.');
-      return;
-    }
-
-    if (!roomId) {
-      alert('채팅방 ID가 없습니다.');
-      return;
-    }
-
-    const nextMessage: ChatMessage = {
-      id: Date.now(),
-      roomId: Number(roomId),
+    const newMessage = createChatMessage({
+      roomId,
       writerId: user.id,
       writerName: user.name,
       content,
-      createdAt: new Date().toISOString(),
-      status: 'sent',
-    };
+      status: "pending",
+    });
 
-    setMessages((prevMessages) => [...prevMessages, nextMessage]);
-    setMessageInput('');
+    setMessages((prevMessages) => [...prevMessages, newMessage]);
+    setMessageInput("");
   }
 
-  function handleKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
-    if (event.key === 'Enter') {
-      handleSendMessage();
-    }
+  function handleRetryMessage(messageId: number) {
+    setMessages((prevMessages) =>
+      prevMessages.map((message) => {
+        if (message.id !== messageId) {
+          return message;
+        }
+
+        return {
+          ...message,
+          status: "pending",
+          createdAt: new Date().toISOString(),
+        };
+      }),
+    );
   }
 
   if (!isLoggedIn) {
     return (
       <section className="chat-room-page">
-        <div className="chat-room-empty-card">
-          <h1>채팅방</h1>
-          <p>채팅방 입장은 로그인 후 사용할 수 있습니다.</p>
-
-          <Link to="/chat" className="chat-room-empty-link">
-            인기 채팅방으로 돌아가기
-          </Link>
+        <div className="chat-room-empty-card">          
+          채팅방 입장은 로그인 후 사용할 수 있습니다.
         </div>
       </section>
     );
   }
 
-  if (!roomId) {
+  if (isInvalidRoomId) {
     return (
       <section className="chat-room-page">
-        <div className="chat-room-empty-card">
-          <h1>채팅방</h1>
-          <p>채팅방 ID가 없습니다.</p>
+        <div className="chat-room-empty-card">          
+          입장할 채팅방 정보가 없습니다.
 
           <Link to="/chat" className="chat-room-empty-link">
-            인기 채팅방으로 돌아가기
+            인기 채팅방으로 이동
           </Link>
         </div>
       </section>
@@ -124,72 +138,107 @@ export default function ChatRoomPage({ user }: ChatRoomPageProps) {
   return (
     <section className="chat-room-page">
       <div className="chat-room-shell">
-        <header className="chat-room-header">
+        <div className="chat-room-header">
           <div>
-            <span className="chat-room-eyebrow">단체 채팅</span>
-            <h1>채팅방 #{roomId}</h1>
+            <h1>{roomTitle}</h1>
           </div>
-        </header>
 
-        <div className="chat-room-box" aria-label="채팅 메시지 목록">
-          {messages.map((message) => {
-            const isMine = message.writerId === user.id;
-
-            return (
-              <div
-                key={message.id}
-                className={`chat-message-row ${isMine ? 'me' : 'other'}`}
-              >
-                {!isMine && (
-                  <div className="chat-message-side">
-                    <div className="chat-message-name">
-                      {message.writerName}
-                    </div>
-                    <div className="chat-message-avatar">
-                      {message.writerName.charAt(0)}
-                    </div>
-                  </div>
-                )}
-
-                <div
-                  className={`chat-message-bubble ${
-                    isMine ? 'me' : 'other'
-                  }`}
-                >
-                  <div className="chat-message-content">
-                    {message.content}
-                  </div>
-
-                  <div className="chat-message-meta">
-                    <span>{formatKoreanChatTime(message.createdAt)}</span>
-
-                    {isMine && message.status === 'pending' && (
-                      <span>전송 중</span>
-                    )}
-
-                    {isMine && message.status === 'failed' && (
-                      <button type="button">재시도</button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+          <span
+            className={`chat-room-connection-dot ${isConnected ? "connected" : "disconnected"}`}
+            aria-label={isConnected ? "연결됨" : "연결 끊김"}
+          />
         </div>
 
-        <div className="chat-room-input-area">
+        <div className="chat-room-box">
+          {messages.length > 0 ? (
+            messages.map((message) => {
+              const isMine = user.id === message.writerId;
+              const rowClassName = isMine
+                ? "chat-message-row me"
+                : "chat-message-row other";
+
+              return (
+                <div
+                  key={`${message.id}-${message.createdAt}`}
+                  className={rowClassName}
+                >
+                  {!isMine && (
+                    <div className="chat-message-side">
+                      <div className="chat-message-avatar">
+                        {getAvatarText(message.writerName)}
+                      </div>
+                      <span className="chat-message-name">
+                        {message.writerName}
+                      </span>
+                    </div>
+                  )}
+
+                  <div
+                    className={`chat-message-bubble
+                      ${isMine ? "me" : "other"} 
+                      ${isMine ? message.status : "sent"}`}
+                  >
+                    <div className="chat-message-content">
+                      {message.content}
+                    </div>
+
+                    <div className="chat-message-meta">
+                      {isMine && message.status === "pending" && (
+                        <span className="chat-message-status">전송 중</span>
+                      )}
+
+                      {isMine && message.status === "failed" && (
+                        <>
+                          <span>{formatKoreanChatTime(message.createdAt)}</span>
+                          <button
+                            type="button"
+                            className="chat-message-retry-button"
+                            onClick={() => handleRetryMessage(message.id)}
+                            aria-label="재전송"
+                          >
+                            ↻
+                          </button>
+                        </>
+                      )}
+
+                      {(!isMine || message.status === "sent") && (
+                        <span>{formatKoreanChatTime(message.createdAt)}</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          ) : (
+            <div className="chat-room-empty-card">
+              아직 메시지가 없습니다.
+            </div>
+          )}
+        </div>
+
+        <form className="chat-room-input-area" onSubmit={handleSubmit}>
           <input
             type="text"
             value={messageInput}
-            placeholder="메시지를 입력하세요..."
-            onChange={handleChangeMessageInput}
-            onKeyDown={handleKeyDown}
+            placeholder={
+              isConnected
+                ? "메시지를 입력하세요."
+                : "채팅 서버에 연결 중입니다. 잠시 후 다시 시도해주세요."
+            }
+            onChange={(event) => setMessageInput(event.target.value)}
+            disabled={!isConnected}
           />
 
-          <button type="button" onClick={handleSendMessage}>
-            보내기
-          </button>
-        </div>
+          <LoadingButton
+            type="submit"
+            className="chat-room-send-button"
+            isLoading={hasPendingMessage}
+            loadingText="전송 중..."
+            disabled={!canSend}
+          >
+            전송
+          </LoadingButton>
+        </form>
       </div>
     </section>
   );
