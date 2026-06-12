@@ -1,4 +1,6 @@
-export type ChatRoomCategory = 'CRYPTO_CURRENCY';
+export const CHAT_ROOM_CATEGORIES = ['CRYPTO_CURRENCY'] as const;
+
+export type ChatRoomCategory = (typeof CHAT_ROOM_CATEGORIES)[number];
 
 export type PopularChatRoom = {
   id: number;
@@ -44,6 +46,12 @@ export type MyChatRoomCursor = {
 };
 
 export type CreateChatRoomRequest = {
+  title: string;
+  description: string;
+  category: ChatRoomCategory;
+};
+
+export type UpdateChatRoomRequest = {
   title: string;
   description: string;
   category: ChatRoomCategory;

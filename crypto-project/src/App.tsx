@@ -101,7 +101,7 @@ export default function App() {
           <Route path="/chat" element={<ChatPage user={user} />} />
           <Route path="/chat/my" element={<MyChatRoomPage user={user} />} />
           <Route path="/chat/create" element={<CreateChatRoomPage user={user} />} />
-          <Route path="/chat/update" element={<UpdateChatRoomPage />} />
+          <Route path="/chat/update" element={<UpdateChatRoomPage user={user} />} />
           <Route path="/chat/room" element={<ChatRoomPage user={user} />} />
           <Route path="/price-alerts" element={<PriceAlertsPage user={user} />} />
           <Route path="/login-success" element={<LoginSuccessPage />} />

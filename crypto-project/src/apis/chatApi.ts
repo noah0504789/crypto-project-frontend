@@ -3,6 +3,7 @@ import type {
   CreateChatRoomRequest,
   PopularChatRoomCursor,
   PopularChatRoomResponse,
+  UpdateChatRoomRequest,
 } from '@/types/chatRoom';
 
 type GetPopularChatRoomsParams = PopularChatRoomCursor & {
@@ -33,4 +34,11 @@ export async function getPopularChatRooms({
 
 export async function createChatRoom(request: CreateChatRoomRequest) {
   await apiClient.post('/chat/room', request);
+}
+
+export async function updateChatRoom(
+  roomId: number,
+  request: UpdateChatRoomRequest,
+) {
+  await apiClient.put(`/chat/room/${roomId}`, request);
 }
