@@ -81,12 +81,17 @@
 .create-chat-room-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 10px;
 
-  margin-top: 8px;
+  margin-top: 20px;
 }
 
-.create-chat-room-cancel-button,
+.create-chat-room-submit-button:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
 .create-chat-room-submit-button {
   height: 40px;
   padding: 0 16px;
@@ -97,17 +102,6 @@
   font-weight: 850;
 
   cursor: pointer;
-}
-
-.create-chat-room-cancel-button {
-  border: 1px solid #d1d5db;
-  background: #ffffff;
-  color: #374151;
-}
-
-.create-chat-room-cancel-button:hover {
-  background: #f3f4f6;
-  color: #111827;
 }
 
 .create-chat-room-submit-button {
@@ -122,6 +116,8 @@
 }
 
 .create-chat-room-submit-button:disabled {
-  opacity: 0.6;
+  background: #9ca3af;
   cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }

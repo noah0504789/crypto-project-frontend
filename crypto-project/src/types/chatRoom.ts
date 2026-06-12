@@ -42,3 +42,9 @@ export type MyChatRoomCursor = {
   lastMsgCreatedAt?: string | null;
   lastId?: number;
 };
+
+export type CreateChatRoomRequest = {
+  title: string;
+  description: string;
+  category: ChatRoomCategory;
+};

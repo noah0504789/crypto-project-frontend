@@ -1,5 +1,6 @@
 import { apiClient } from '@/apis/apiClient';
 import type {
+  CreateChatRoomRequest,
   PopularChatRoomCursor,
   PopularChatRoomResponse,
 } from '@/types/chatRoom';
@@ -28,4 +29,8 @@ export async function getPopularChatRooms({
   );
 
   return response.data;
+}
+
+export async function createChatRoom(request: CreateChatRoomRequest) {
+  await apiClient.post('/chat/room', request);
 }
