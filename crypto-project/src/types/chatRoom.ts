@@ -56,3 +56,14 @@ export type UpdateChatRoomRequest = {
   description: string;
   category: ChatRoomCategory;
 };
+
+export type MyChatRoomBadgePayload = {
+  id: string;
+  memberIds: string[];
+  lastMsgContent: string;
+  lastMsgCreatedAt: string;
+};
+
+export type MyChatRoomBadgeEvent = {
+  payload: MyChatRoomBadgePayload;
+};

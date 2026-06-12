@@ -4,11 +4,17 @@ import type {
   PopularChatRoomCursor,
   PopularChatRoomResponse,
   UpdateChatRoomRequest,
+  MyChatRoomCursor,
+  MyChatRoomResponse,
 } from '@/types/chatRoom';
 
 type GetPopularChatRoomsParams = PopularChatRoomCursor & {
   limit: number;
   category: string;
+};
+
+type GetMyChatRoomsParams = MyChatRoomCursor & {
+  limit: number;
 };
 
 export async function getPopularChatRooms({
@@ -32,6 +38,24 @@ export async function getPopularChatRooms({
   return response.data;
 }
 
+export async function getMyChatRooms({
+  limit,
+  lastUnreadFlag,
+  lastMsgCreatedAt,
+  lastId,
+}: GetMyChatRoomsParams) {
+  const response = await apiClient.get<MyChatRoomResponse>('/chat/rooms/me', {
+    params: {
+      limit,
+      lastUnreadFlag,
+      lastMsgCreatedAt,
+      lastId,
+    },
+  });
+
+  return response.data;
+}
+
 export async function createChatRoom(request: CreateChatRoomRequest) {
   await apiClient.post('/chat/room', request);
 }
@@ -41,4 +65,8 @@ export async function updateChatRoom(
   request: UpdateChatRoomRequest,
 ) {
   await apiClient.put(`/chat/room/${roomId}`, request);
+}
+
+export async function leaveChatRoom(roomId: number) {
+  await apiClient.delete(`/chat/room/${roomId}/members/me`);
 }
