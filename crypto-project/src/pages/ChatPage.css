@@ -226,3 +226,10 @@
 .popular-chat-room-more-button:hover {
   background: #f3f4f6;
 }
+
+.popular-chat-room-more-button:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}

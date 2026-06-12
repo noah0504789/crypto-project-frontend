@@ -1,54 +1,104 @@
-import { useState } from "react";
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import type { User } from "@/types/user";
-import type { PopularChatRoom } from "@/types/chatRoom";
-import { saveRedirectAfterLogin } from '@/utils/authStorage';
-import "./ChatPage.css";
+import { getPopularChatRooms } from '@/apis/chatApi';
+import LoadingButton from '@/components/Button/LoadingButton';
+import type { User } from '@/types/user';
+import type { PopularChatRoom, PopularChatRoomCursor } from '@/types/chatRoom';
+import { formatKoreanDateTime } from '@/utils/dateFormatter';
+import './ChatPage.css';
 
 type ChatPageProps = {
   user: User | null;
 };
 
-const mockPopularChatRooms: PopularChatRoom[] = [
-  {
-    id: 1,
-    title: "비트코인 단기 시황방",
-    description: "BTC 단기 흐름과 주요 지지/저항을 이야기하는 방입니다.",
-    popularity: 982,
-    memberCnt: 128,
-    hostId: 10,
-    createdAt: "2026-06-11T09:00:00",
-  },
-  {
-    id: 2,
-    title: "이더리움 장기 투자방",
-    description: "ETH 장기 관점, 생태계 뉴스, ETF 이슈를 공유합니다.",
-    popularity: 741,
-    memberCnt: 86,
-    hostId: 12,
-    createdAt: "2026-06-10T20:30:00",
-  },
-  {
-    id: 3,
-    title: "알트코인 관찰방",
-    description: "알트코인 급등락, 거래량, 테마 코인을 함께 봅니다.",
-    popularity: 523,
-    memberCnt: 64,
-    hostId: 15,
-    createdAt: "2026-06-09T18:10:00",
-  },
-];
+const POPULAR_CHAT_ROOM_LIMIT = 10;
+const DEFAULT_CATEGORY = 'CRYPTO_CURRENCY';
 
 export default function ChatPage({ user }: ChatPageProps) {
   const navigate = useNavigate();
 
-  const [popularChatRooms] = useState<PopularChatRoom[]>(mockPopularChatRooms);
+  const [popularChatRooms, setPopularChatRooms] = useState<PopularChatRoom[]>([]);
+  const [hasNext, setHasNext] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   const isLoggedIn = user !== null;
 
+  useEffect(() => {
+    let isCancelled = false;
+
+    async function loadInitialPopularChatRooms() {
+      try {
+        const response = await getPopularChatRooms({
+          limit: POPULAR_CHAT_ROOM_LIMIT,
+          category: DEFAULT_CATEGORY,
+        });
+
+        if (isCancelled) {
+          return;
+        }
+
+        setPopularChatRooms(response.items);
+        setHasNext(response.hasNext);
+      } catch (error) {
+        console.error('failed to load popular chat rooms:', error);
+
+        if (!isCancelled) {
+          setPopularChatRooms([]);
+          setHasNext(false);
+        }
+      } finally {
+        if (!isCancelled) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    loadInitialPopularChatRooms();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
+
+  async function loadMorePopularChatRooms(cursor: PopularChatRoomCursor) {
+    setIsLoadingMore(true);
+
+    try {
+      const response = await getPopularChatRooms({
+        limit: POPULAR_CHAT_ROOM_LIMIT,
+        category: DEFAULT_CATEGORY,
+        lastId: cursor.lastId,
+        lastPopularity: cursor.lastPopularity,
+      });
+
+      setPopularChatRooms((prevRooms) => [
+        ...prevRooms,
+        ...response.items,
+      ]);
+      setHasNext(response.hasNext);
+    } catch (error) {
+      console.error('failed to load more popular chat rooms:', error);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }
+
+  function handleLoadMore() {
+    if (isLoadingMore || popularChatRooms.length === 0) {
+      return;
+    }
+
+    const lastRoom = popularChatRooms[popularChatRooms.length - 1];
+
+    loadMorePopularChatRooms({
+      lastId: lastRoom.id,
+      lastPopularity: lastRoom.popularity,
+    });
+  }
+
   function handleEnterRoom(roomId: number) {
     if (!isLoggedIn) {
-      saveRedirectAfterLogin(`/chat/room?roomId=${roomId}`);
       alert('로그인이 필요한 서비스입니다.');
       return;
     }
@@ -79,42 +129,61 @@ export default function ChatPage({ user }: ChatPageProps) {
         )}
       </div>
 
-      <div className="popular-chat-room-list">
-        {popularChatRooms.map((room) => (
-          <article key={room.id} className="popular-chat-room-card">
-            <div className="popular-chat-room-main">
-              <div className="popular-chat-room-title-row">
-                <h2>{room.title}</h2>
-                <span className="popular-chat-room-badge">
-                  인기 {room.popularity}
-                </span>
-              </div>
+      {isLoading ? (
+        <div className="popular-chat-room-empty-card">
+          인기 채팅방을 불러오는 중입니다.
+        </div>
+      ) : popularChatRooms.length > 0 ? (
+        <>
+          <div className="popular-chat-room-list">
+            {popularChatRooms.map((room) => (
+              <article key={room.id} className="popular-chat-room-card">
+                <div className="popular-chat-room-main">
+                  <div className="popular-chat-room-title-row">
+                    <h2>{room.title}</h2>
+                    <span className="popular-chat-room-badge">
+                      인기 {room.popularity}
+                    </span>
+                  </div>
 
-              <p className="popular-chat-room-description">
-                {room.description}
-              </p>
+                  <p className="popular-chat-room-description">
+                    {room.description}
+                  </p>
 
-              <div className="popular-chat-room-meta">
-                <span>멤버 {room.memberCnt}명</span>
-                <span>방장 #{room.hostId}</span>
-                <span>{new Date(room.createdAt).toLocaleString()}</span>
-              </div>
-            </div>
+                  <div className="popular-chat-room-meta">
+                    <span>멤버 {room.memberCnt}명</span>
+                    <span>방장 #{room.hostId}</span>
+                    <span>{formatKoreanDateTime(room.createdAt)}</span>
+                  </div>
+                </div>
 
-            <button
-              type="button"
-              className="popular-chat-room-enter-button"
-              onClick={() => handleEnterRoom(room.id)}
+                <button
+                  type="button"
+                  className="popular-chat-room-enter-button"
+                  onClick={() => handleEnterRoom(room.id)}
+                >
+                  입장하기
+                </button>
+              </article>
+            ))}
+          </div>
+
+          {hasNext && (
+            <LoadingButton
+              className="popular-chat-room-more-button"
+              isLoading={isLoadingMore}
+              loadingText="불러오는 중..."
+              onClick={handleLoadMore}
             >
-              입장하기
-            </button>
-          </article>
-        ))}
-      </div>
-
-      <button type="button" className="popular-chat-room-more-button">
-        더 보기
-      </button>
+              더 보기
+            </LoadingButton>
+          )}
+        </>
+      ) : (
+        <div className="popular-chat-room-empty-card">
+          아직 인기 채팅방이 없습니다.
+        </div>
+      )}
     </section>
   );
 }
