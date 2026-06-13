@@ -210,12 +210,12 @@ export default function Header({
                 {user.profileImageUrl ? (
                   <img
                     src={user.profileImageUrl}
-                    alt={user.name}
+                    alt={user.nickname}
                     className="profile-image"
                   />
                 ) : (
                   <span className="profile-fallback">
-                    {user.name.charAt(0)}
+                    {user.nickname.charAt(0)}
                   </span>
                 )}
               </button>
@@ -225,14 +225,14 @@ export default function Header({
                   <div className="profile-dropdown-user">
                     <div className="profile-dropdown-avatar">
                       {user.profileImageUrl ? (
-                        <img src={user.profileImageUrl} alt={user.name} />
+                        <img src={user.profileImageUrl} alt={user.nickname} />
                       ) : (
-                        <span>{user.name.charAt(0)}</span>
+                        <span>{user.nickname.charAt(0)}</span>
                       )}
                     </div>
 
                     <div className="profile-dropdown-info">
-                      <strong>{user.name}</strong>
+                      <strong>{user.nickname}</strong>
                       {user.email && <span>{user.email}</span>}
                     </div>
                   </div>

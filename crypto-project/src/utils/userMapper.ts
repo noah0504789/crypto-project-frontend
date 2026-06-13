@@ -1,9 +1,9 @@
-import type { User, UserResponse } from '@/types/user';
+import type { User, UserResponse } from "@/types/user";
 
 export function mapUserResponseToUser(response: UserResponse): User {
   return {
     id: response.id,
-    name: response.nickname,
+    nickname: response.nickname,
     email: response.email,
   };
 }

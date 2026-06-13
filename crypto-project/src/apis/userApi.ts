@@ -14,6 +14,4 @@ export async function getMyProfile() {
 
 export async function updateMyProfile(request: UpdateMyProfileRequest) {
   await apiClient.patch('/user/me', request);
-
-  return getMyProfile();
 }

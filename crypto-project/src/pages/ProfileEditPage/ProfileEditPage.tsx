@@ -1,8 +1,8 @@
-import { useState, type FormEvent } from 'react';
-import { updateMyProfile } from '@/apis/userApi';
-import LoadingButton from '@/components/Button/LoadingButton';
-import type { User } from '@/types/user';
-import './ProfileEditPage.css';
+import { useState, type FormEvent } from "react";
+import { updateMyProfile } from "@/apis/userApi";
+import LoadingButton from "@/components/Button/LoadingButton";
+import type { User } from "@/types/user";
+import "./ProfileEditPage.css";
 
 type ProfileEditPageProps = {
   user: User | null;
@@ -13,7 +13,7 @@ export default function ProfileEditPage({
   user,
   onUserUpdated,
 }: ProfileEditPageProps) {
-  const [nickname, setNickname] = useState(user?.name ?? '');
+  const [nickname, setNickname] = useState(user?.nickname ?? "");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!user) {
@@ -21,29 +21,35 @@ export default function ProfileEditPage({
   }
 
   const trimmedNickname = nickname.trim();
-  const isNicknameChanged = trimmedNickname !== user.name;
+  const isNicknameChanged = trimmedNickname !== user.nickname;
   const canSubmit =
-    trimmedNickname.length >= 2 && trimmedNickname.length <= 20 && isNicknameChanged;
+    trimmedNickname.length >= 2 &&
+    trimmedNickname.length <= 20 &&
+    isNicknameChanged;
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (!canSubmit || isSubmitting) {
+    if (!canSubmit || isSubmitting || !user) {
       return;
     }
 
     try {
       setIsSubmitting(true);
 
-      const updatedUser = await updateMyProfile({
+      await updateMyProfile({
         nickname: trimmedNickname,
       });
 
-      onUserUpdated(updatedUser);
-      alert('프로필이 수정되었습니다.');
+      onUserUpdated({
+        ...user,
+        nickname: trimmedNickname,
+      });
+
+      alert("프로필이 수정되었습니다.");
     } catch (error) {
       console.error(error);
-      alert('프로필 수정에 실패했습니다.');
+      alert("프로필 수정에 실패했습니다.");
     } finally {
       setIsSubmitting(false);
     }
@@ -69,7 +75,7 @@ export default function ProfileEditPage({
 
         <label className="profile-edit-field">
           <span>이메일</span>
-          <input type="email" value={user.email ?? ''} disabled />
+          <input type="email" value={user.email ?? ""} disabled />
         </label>
 
         <div className="profile-edit-actions">
