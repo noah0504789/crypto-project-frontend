@@ -80,7 +80,7 @@ export default function ProfileEditPage({
             loadingText="저장 중..."
             disabled={!canSubmit}
           >
-            저장하기
+            수정하기
           </LoadingButton>
         </div>
       </form>
