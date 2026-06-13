@@ -1,11 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import type { User } from '@/types/user';
-import type { Notification } from '@/types/notification';
-import { formatKoreanDateTime } from '@/utils/dateFormatter';
-import { saveRedirectAfterLogin } from '@/utils/authStorage';
-import logoIcon from '@/assets/icon.png';
-import './Header.css';
+import { useEffect, useRef, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import type { User } from "@/types/user";
+import type { Notification } from "@/types/notification";
+import { formatKoreanDateTime } from "@/utils/dateFormatter";
+import { saveRedirectAfterLogin } from "@/utils/authStorage";
+import logoIcon from "@/assets/icon.png";
+import "./Header.css";
 
 type HeaderProps = {
   user: User | null;
@@ -54,10 +54,10 @@ export default function Header({
       }
     }
 
-    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
 
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
 
@@ -65,8 +65,8 @@ export default function Header({
     if (!user) {
       event.preventDefault();
 
-      saveRedirectAfterLogin('/price-alerts');
-      alert('로그인이 필요한 서비스입니다.');
+      saveRedirectAfterLogin("/price-alerts");
+      alert("로그인이 필요한 서비스입니다.");
       onLogin();
     }
   }
@@ -123,7 +123,10 @@ export default function Header({
       <div className="header-right">
         {user ? (
           <div className="user-menu">
-            <div className="notification-menu-wrapper" ref={notificationMenuRef}>
+            <div
+              className="notification-menu-wrapper"
+              ref={notificationMenuRef}
+            >
               <button
                 type="button"
                 className="notification-button"
@@ -131,7 +134,9 @@ export default function Header({
                 onClick={handleToggleNotificationMenu}
               >
                 <span className="notification-icon">🔔</span>
-                {hasUnreadNotification && <span className="notification-badge" />}
+                {hasUnreadNotification && (
+                  <span className="notification-badge" />
+                )}
               </button>
 
               {isNotificationMenuOpen && (
@@ -147,7 +152,7 @@ export default function Header({
                           key={notification.id}
                           type="button"
                           className={`notification-item ${
-                            notification.read ? 'read' : 'unread'
+                            notification.read ? "read" : "unread"
                           }`}
                           onClick={() => handleClickNotification(notification)}
                         >
@@ -162,15 +167,23 @@ export default function Header({
 
                             {notification.messageParts ? (
                               <p className="notification-message">
-                                {notification.messageParts.map((part, index) => (
-                                  <span key={`${part.text}-${index}`}>
-                                    {part.bold ? <strong>{part.text}</strong> : part.text}
-                                    {part.lineBreakAfter && <br />}
-                                  </span>
-                                ))}
+                                {notification.messageParts.map(
+                                  (part, index) => (
+                                    <span key={`${part.text}-${index}`}>
+                                      {part.bold ? (
+                                        <strong>{part.text}</strong>
+                                      ) : (
+                                        part.text
+                                      )}
+                                      {part.lineBreakAfter && <br />}
+                                    </span>
+                                  ),
+                                )}
                               </p>
                             ) : (
-                              <p className="notification-message">{notification.message}</p>
+                              <p className="notification-message">
+                                {notification.message}
+                              </p>
                             )}
 
                             <span className="notification-time">
@@ -226,8 +239,12 @@ export default function Header({
 
                   <div className="profile-dropdown-divider" />
 
-                  <Link to="/profile" className="profile-dropdown-item">
-                    프로필 수정
+                  <Link
+                    to="/account"
+                    className="profile-dropdown-item"
+                    onClick={() => setIsProfileMenuOpen(false)}
+                  >
+                    계정
                   </Link>
 
                   <button

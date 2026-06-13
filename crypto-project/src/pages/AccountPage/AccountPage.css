@@ -1,0 +1,44 @@
+.account-page {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 32px 20px;
+}
+
+.account-layout {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.account-content {
+  min-width: 0;
+}
+
+.account-page-empty-card {
+  max-width: 520px;
+  margin: 60px auto;
+  padding: 32px;
+
+  border: 1px solid #e5e7eb;
+  border-radius: 20px;
+
+  background: #ffffff;
+  text-align: center;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+}
+
+.account-page-empty-card h1 {
+  margin: 0 0 8px;
+
+  color: #111827;
+  font-size: 24px;
+  font-weight: 900;
+}
+
+.account-page-empty-card p {
+  margin: 0;
+
+  color: #6b7280;
+  font-size: 14px;
+}

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Routes, Route, useNavigate } from 'react-router-dom';
+import { Routes, Route, useNavigate, Navigate } from 'react-router-dom';
 import type { User } from '@/types/user';
 import type { Notification, UpbitTickerAlertEvent } from '@/types/notification';
 import { logout } from '@/apis/authApi';
@@ -15,6 +15,8 @@ import UpdateChatRoomPage from '@/pages/UpdateChatRoomPage';
 import ChatRoomPage from '@/pages/ChatRoomPage';
 import PriceAlertsPage from '@/pages/PriceAlertsPage';
 import LoginSuccessPage from '@/pages/LoginSuccessPage';
+import AccountPage from '@/pages/AccountPage/AccountPage';
+import ProfileEditPage from '@/pages/ProfileEditPage/ProfileEditPage';
 import Footer from '@/components/Footer/Footer';
 import './App.css';
 
@@ -104,7 +106,11 @@ export default function App() {
           <Route path="/chat/update" element={<UpdateChatRoomPage user={user} />} />
           <Route path="/chat/room" element={<ChatRoomPage user={user} />} />
           <Route path="/price-alerts" element={<PriceAlertsPage user={user} />} />
-          <Route path="/login-success" element={<LoginSuccessPage />} />
+          <Route path="/account" element={<AccountPage user={user} />}>
+            <Route index element={<Navigate to="profile-edit" replace />} />
+            <Route path="profile-edit" element={<ProfileEditPage user={user} />} />
+          </Route>
+          <Route path="/login-success" element={<LoginSuccessPage />} />          
         </Routes>
       </main>
 
