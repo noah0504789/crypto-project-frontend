@@ -1,17 +1,21 @@
-import { useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
-import type { User } from "@/types/user";
-import type { ChatMessage } from "@/types/chatMessage";
-import { createChatMessage, isValidRoomId, getAvatarText } from "@/utils/chatMessageUtils";
-import { formatKoreanChatTime } from "@/utils/dateFormatter";
-import LoadingButton from "@/components/Button/LoadingButton";
-import "./ChatRoomPage.css";
+import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
+import type { Client } from '@stomp/stompjs';
+import { sendChatMessage, subscribeChatMessageAck, subscribeChatRoomMessages } from '@/apis/chatStompApi';
+import { createStompClient } from '@/apis/stompClient';
+import type { ChatMessage } from '@/types/chatMessage';
+import type { User } from '@/types/user';
+import { formatKoreanChatTime } from '@/utils/dateFormatter';
+import { createClientMessageId, createPendingChatMessage, isValidRoomId, mapBroadcastEventToChatMessage, getAvatarText } from '@/utils/chatMessageUtils';
+import LoadingButton from '@/components/Button/LoadingButton';
+
+import './ChatRoomPage.css';
 
 type ChatRoomPageProps = {
   user: User | null;
 };
 
-const roomTitle = "비트코인 단기 시황방";
+const roomTitle = '비트코인 단기 시황방';
 const mockChatMessages: ChatMessage[] = [
   {
     id: 1,
@@ -55,47 +59,182 @@ const mockChatMessages: ChatMessage[] = [
 export default function ChatRoomPage({ user }: ChatRoomPageProps) {
   const [searchParams] = useSearchParams();
 
-  const roomIdParam = searchParams.get("roomId");
+  const roomIdParam = searchParams.get('roomId');
   const roomId = roomIdParam ? Number(roomIdParam) : NaN;
 
+  const stompClientRef = useRef<Client | null>(null);
+
   const [messages, setMessages] = useState<ChatMessage[]>(mockChatMessages);
-  const [messageInput, setMessageInput] = useState("");
-  const [isConnected] = useState(true);
+  const [messageInput, setMessageInput] = useState('');
+  const [isConnected, setIsConnected] = useState(false);
 
   const isLoggedIn = user !== null;
   const isInvalidRoomId = !isValidRoomId(roomId);
+
   const hasPendingMessage = messages.some(
-    (message) => message.status === "pending",
+    (message) => message.status === 'pending',
   );
 
-  const canSend =
-    isLoggedIn &&
-    !isInvalidRoomId &&
-    isConnected &&
-    messageInput.trim().length > 0;
+  const canSend = isLoggedIn && !isInvalidRoomId && isConnected && messageInput.trim().length > 0 && !hasPendingMessage;
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  useEffect(() => {
+    if (!isLoggedIn || isInvalidRoomId || !user) {
+      return;
+    }
+
+    const client = createStompClient();
+
+    stompClientRef.current = client;
+
+    client.onConnect = () => {
+      setIsConnected(true);
+
+      subscribeChatRoomMessages(client, roomId, (event) => {
+        const writerId = Number(event.payload.writerId);
+
+        const fallbackWriterName =
+          writerId === user.id ? user.name : `사용자 ${event.payload.writerId}`;
+
+        const receivedMessage = mapBroadcastEventToChatMessage({
+          event,
+          fallbackWriterName,
+        });
+
+        setMessages((prevMessages) => {
+          const matchedMessageIndex = prevMessages.findIndex(
+            (message) =>
+              message.clientMessageId !== undefined &&
+              message.clientMessageId === event.clientMessageId,
+          );
+
+          if (matchedMessageIndex === -1) {
+            return [...prevMessages, receivedMessage];
+          }
+
+          return prevMessages.map((message, index) => {
+            if (index !== matchedMessageIndex) {
+              return message;
+            }
+
+            return {
+              ...receivedMessage,
+              writerName: message.writerName,
+            };
+          });
+        });
+      });
+
+      subscribeChatMessageAck(client, (ack) => {
+        if (ack.success) {
+          return;
+        }
+
+        setMessages((prevMessages) =>
+          prevMessages.map((message) => {
+            if (message.clientMessageId !== ack.clientMessageId) {
+              return message;
+            }
+
+            return {
+              ...message,
+              status: 'failed',
+            };
+          }),
+        );
+      });
+    };
+
+    client.onWebSocketClose = () => {
+      setIsConnected(false);
+    };
+
+    client.onStompError = () => {
+      setIsConnected(false);
+    };
+
+    client.activate();
+
+    return () => {
+      stompClientRef.current = null;
+      setIsConnected(false);
+      void client.deactivate();
+    };
+  }, [isLoggedIn, isInvalidRoomId, roomId, user]);
+
+  function publishMessage({
+    content,
+    clientMessageId,
+  }: {
+    content: string;
+    clientMessageId: string;
+  }) {
+    const client = stompClientRef.current;
+
+    if (!client || !client.connected || !user) {
+      return false;
+    }
+
+    sendChatMessage(client, {
+      roomId: String(roomId),
+      writerId: String(user.id),
+      content,
+      clientMessageId,
+    });
+
+    return true;
+  }
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-
-    const content = messageInput.trim();
 
     if (!canSend || !user) {
       return;
     }
 
-    const newMessage = createChatMessage({
+    const content = messageInput.trim();
+    const clientMessageId = createClientMessageId();
+
+    const pendingMessage = createPendingChatMessage({
       roomId,
       writerId: user.id,
       writerName: user.name,
       content,
-      status: "pending",
+      clientMessageId,
     });
 
-    setMessages((prevMessages) => [...prevMessages, newMessage]);
-    setMessageInput("");
+    setMessages((prevMessages) => [...prevMessages, pendingMessage]);
+    setMessageInput('');
+
+    const isPublished = publishMessage({
+      content,
+      clientMessageId,
+    });
+
+    if (!isPublished) {
+      setMessages((prevMessages) =>
+        prevMessages.map((message) => {
+          if (message.clientMessageId !== clientMessageId) {
+            return message;
+          }
+
+          return {
+            ...message,
+            status: 'failed',
+          };
+        }),
+      );
+    }
   }
 
   function handleRetryMessage(messageId: number) {
+    const failedMessage = messages.find((message) => message.id === messageId);
+
+    if (!failedMessage || !user) {
+      return;
+    }
+
+    const nextClientMessageId = createClientMessageId();
+
     setMessages((prevMessages) =>
       prevMessages.map((message) => {
         if (message.id !== messageId) {
@@ -104,17 +243,38 @@ export default function ChatRoomPage({ user }: ChatRoomPageProps) {
 
         return {
           ...message,
-          status: "pending",
+          status: 'pending',
           createdAt: new Date().toISOString(),
+          clientMessageId: nextClientMessageId,
         };
       }),
     );
+
+    const isPublished = publishMessage({
+      content: failedMessage.content,
+      clientMessageId: nextClientMessageId,
+    });
+
+    if (!isPublished) {
+      setMessages((prevMessages) =>
+        prevMessages.map((message) => {
+          if (message.id !== messageId) {
+            return message;
+          }
+
+          return {
+            ...message,
+            status: 'failed',
+          };
+        }),
+      );
+    }
   }
 
   if (!isLoggedIn) {
     return (
       <section className="chat-room-page">
-        <div className="chat-room-empty-card">          
+        <div className="chat-room-empty-card">
           채팅방 입장은 로그인 후 사용할 수 있습니다.
         </div>
       </section>
@@ -124,7 +284,7 @@ export default function ChatRoomPage({ user }: ChatRoomPageProps) {
   if (isInvalidRoomId) {
     return (
       <section className="chat-room-page">
-        <div className="chat-room-empty-card">          
+        <div className="chat-room-empty-card">
           입장할 채팅방 정보가 없습니다.
 
           <Link to="/chat" className="chat-room-empty-link">
@@ -144,8 +304,9 @@ export default function ChatRoomPage({ user }: ChatRoomPageProps) {
           </div>
 
           <span
-            className={`chat-room-connection-dot ${isConnected ? "connected" : "disconnected"}`}
-            aria-label={isConnected ? "연결됨" : "연결 끊김"}
+            className={`chat-room-connection-dot ${
+              isConnected ? 'connected' : 'disconnected'
+            }`}
           />
         </div>
 
@@ -153,20 +314,18 @@ export default function ChatRoomPage({ user }: ChatRoomPageProps) {
           {messages.length > 0 ? (
             messages.map((message) => {
               const isMine = user.id === message.writerId;
-              const rowClassName = isMine
-                ? "chat-message-row me"
-                : "chat-message-row other";
 
               return (
                 <div
-                  key={`${message.id}-${message.createdAt}`}
-                  className={rowClassName}
+                  key={`${message.id}-${message.clientMessageId ?? message.createdAt}`}
+                  className={`chat-message-row ${isMine ? 'me' : 'other'}`}
                 >
                   {!isMine && (
                     <div className="chat-message-side">
                       <div className="chat-message-avatar">
                         {getAvatarText(message.writerName)}
                       </div>
+
                       <span className="chat-message-name">
                         {message.writerName}
                       </span>
@@ -174,22 +333,25 @@ export default function ChatRoomPage({ user }: ChatRoomPageProps) {
                   )}
 
                   <div
-                    className={`chat-message-bubble
-                      ${isMine ? "me" : "other"} 
-                      ${isMine ? message.status : "sent"}`}
+                    className={`chat-message-bubble ${isMine ? 'me' : 'other'} ${
+                      isMine ? message.status : 'sent'
+                    }`}
                   >
                     <div className="chat-message-content">
                       {message.content}
                     </div>
 
                     <div className="chat-message-meta">
-                      {isMine && message.status === "pending" && (
+                      {isMine && message.status === 'pending' && (
                         <span className="chat-message-status">전송 중</span>
                       )}
 
-                      {isMine && message.status === "failed" && (
+                      {isMine && message.status === 'failed' && (
                         <>
-                          <span>{formatKoreanChatTime(message.createdAt)}</span>
+                          <span>
+                            {formatKoreanChatTime(message.createdAt)}
+                          </span>
+
                           <button
                             type="button"
                             className="chat-message-retry-button"
@@ -201,7 +363,7 @@ export default function ChatRoomPage({ user }: ChatRoomPageProps) {
                         </>
                       )}
 
-                      {(!isMine || message.status === "sent") && (
+                      {(!isMine || message.status === 'sent') && (
                         <span>{formatKoreanChatTime(message.createdAt)}</span>
                       )}
                     </div>
@@ -211,7 +373,11 @@ export default function ChatRoomPage({ user }: ChatRoomPageProps) {
             })
           ) : (
             <div className="chat-room-empty-card">
-              아직 메시지가 없습니다.
+              <p>
+                {isConnected
+                  ? '아직 메시지가 없습니다.'
+                  : '채팅 서버에 연결 중입니다.'}
+              </p>
             </div>
           )}
         </div>
@@ -222,8 +388,8 @@ export default function ChatRoomPage({ user }: ChatRoomPageProps) {
             value={messageInput}
             placeholder={
               isConnected
-                ? "메시지를 입력하세요."
-                : "채팅 서버에 연결 중입니다. 잠시 후 다시 시도해주세요."
+                ? '메시지를 입력하세요.'
+                : '채팅 서버에 연결 중입니다. 잠시 후 다시 시도해주세요.'
             }
             onChange={(event) => setMessageInput(event.target.value)}
             disabled={!isConnected}

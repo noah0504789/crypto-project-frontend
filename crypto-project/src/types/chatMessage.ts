@@ -8,6 +8,7 @@ export type ChatMessage = {
   content: string;
   createdAt: string;
   status: ChatMessageStatus;
+  clientMessageId?: string;
 };
 
 export type ChatMessageRequest = {
