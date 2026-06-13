@@ -1,4 +1,4 @@
-import type { ChatMessage, ChatMessageBroadcastEvent } from '@/types/chatMessage';
+import type { ChatMessage, ChatMessageBroadcastEvent, ChatMessageResponseItem } from '@/types/chatMessage';
 
 export function createClientMessageId() {
   return `client-${Date.now()}-${crypto.randomUUID()}`;
@@ -30,6 +30,20 @@ export function createPendingChatMessage({
     createdAt: new Date().toISOString(),
     status: 'pending',
     clientMessageId,
+  };
+}
+
+export function mapChatMessageResponseItemToChatMessage(
+  item: ChatMessageResponseItem,
+): ChatMessage {
+  return {
+    id: item.id,
+    roomId: item.roomId,
+    writerId: item.writerId,
+    writerName: item.writerName,
+    content: item.content,
+    createdAt: item.createdAt,
+    status: 'sent',
   };
 }
 

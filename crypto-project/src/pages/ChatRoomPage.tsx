@@ -1,13 +1,26 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import type { Client } from '@stomp/stompjs';
-import { sendChatMessage, subscribeChatMessageAck, subscribeChatRoomMessages } from '@/apis/chatStompApi';
+
+import { getChatMessages } from '@/apis/chatMessageApi';
+import {
+  sendChatMessage,
+  subscribeChatMessageAck,
+  subscribeChatRoomMessages,
+} from '@/apis/chatStompApi';
 import { createStompClient } from '@/apis/stompClient';
 import type { ChatMessage } from '@/types/chatMessage';
 import type { User } from '@/types/user';
-import { formatKoreanChatTime } from '@/utils/dateFormatter';
-import { createClientMessageId, createPendingChatMessage, isValidRoomId, mapBroadcastEventToChatMessage, getAvatarText } from '@/utils/chatMessageUtils';
+import {
+  createClientMessageId,
+  createPendingChatMessage,
+  getAvatarText,
+  isValidRoomId,
+  mapBroadcastEventToChatMessage,
+  mapChatMessageResponseItemToChatMessage,
+} from '@/utils/chatMessageUtils';
 import LoadingButton from '@/components/Button/LoadingButton';
+import { formatKoreanChatTime } from '@/utils/dateFormatter';
 
 import './ChatRoomPage.css';
 
@@ -16,45 +29,8 @@ type ChatRoomPageProps = {
 };
 
 const roomTitle = '비트코인 단기 시황방';
-const mockChatMessages: ChatMessage[] = [
-  {
-    id: 1,
-    roomId: 101,
-    writerId: 2,
-    writerName: "coinWatcher",
-    content: "오늘 비트코인 거래량이 꽤 올라왔네요.",
-    createdAt: "2026-06-11T10:10:00",
-    status: "sent",
-  },
-  {
-    id: 2,
-    roomId: 101,
-    writerId: 1,
-    writerName: "나",
-    content: "108K 부근 저항 확인하고 들어가는 게 좋아 보입니다.",
-    createdAt: "2026-06-11T10:12:00",
-    status: "sent",
-  },
-  {
-    id: 3,
-    roomId: 101,
-    writerId: 3,
-    writerName: "ethLong",
-    content:
-      "알트는 아직 비트 방향성 확인하고 보는 게 안전할 것 같아요. 특히 거래량 없는 종목은 조심해야 할 듯합니다.",
-    createdAt: "2026-06-11T10:15:00",
-    status: "sent",
-  },
-  {
-    id: 4,
-    roomId: 101,
-    writerId: 1,
-    writerName: "나",
-    content: "오케이. 일단 관망하면서 눌림목만 보겠습니다.",
-    createdAt: "2026-06-11T10:18:00",
-    status: "failed",
-  },
-];
+const MESSAGE_LIMIT = 10;
+const PREVIOUS_MESSAGE_SCROLL_THRESHOLD = 40;
 
 export default function ChatRoomPage({ user }: ChatRoomPageProps) {
   const [searchParams] = useSearchParams();
@@ -63,10 +39,14 @@ export default function ChatRoomPage({ user }: ChatRoomPageProps) {
   const roomId = roomIdParam ? Number(roomIdParam) : NaN;
 
   const stompClientRef = useRef<Client | null>(null);
+  const chatBoxRef = useRef<HTMLDivElement | null>(null);
 
-  const [messages, setMessages] = useState<ChatMessage[]>(mockChatMessages);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [messageInput, setMessageInput] = useState('');
   const [isConnected, setIsConnected] = useState(false);
+  const [isLoadingMessages, setIsLoadingMessages] = useState(false);
+  const [isLoadingPreviousMessages, setIsLoadingPreviousMessages] = useState(false);
+  const [hasNextMessages, setHasNextMessages] = useState(false);
 
   const isLoggedIn = user !== null;
   const isInvalidRoomId = !isValidRoomId(roomId);
@@ -75,7 +55,68 @@ export default function ChatRoomPage({ user }: ChatRoomPageProps) {
     (message) => message.status === 'pending',
   );
 
-  const canSend = isLoggedIn && !isInvalidRoomId && isConnected && messageInput.trim().length > 0 && !hasPendingMessage;
+  const canSend =
+    isLoggedIn &&
+    !isInvalidRoomId &&
+    isConnected &&
+    messageInput.trim().length > 0 &&
+    !hasPendingMessage;
+
+  useEffect(() => {
+    if (!isLoggedIn || isInvalidRoomId) {
+      return;
+    }
+
+    let isCancelled = false;
+
+    async function loadRecentMessages() {
+      try {
+        setIsLoadingMessages(true);
+
+        const response = await getChatMessages({
+          roomId,
+          limit: MESSAGE_LIMIT,
+        });
+
+        if (isCancelled) {
+          return;
+        }
+
+        const nextMessages = [...response.items]
+          .reverse()
+          .map(mapChatMessageResponseItemToChatMessage);
+
+        setMessages(nextMessages);
+        setHasNextMessages(response.hasNext);
+
+        requestAnimationFrame(() => {
+          const chatBox = chatBoxRef.current;
+
+          if (!chatBox) {
+            return;
+          }
+
+          chatBox.scrollTop = chatBox.scrollHeight;
+        });
+      } catch (error) {
+        console.error(error);
+
+        if (!isCancelled) {
+          alert('최근 메시지를 불러오지 못했습니다.');
+        }
+      } finally {
+        if (!isCancelled) {
+          setIsLoadingMessages(false);
+        }
+      }
+    }
+
+    void loadRecentMessages();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [isLoggedIn, isInvalidRoomId, roomId]);
 
   useEffect(() => {
     if (!isLoggedIn || isInvalidRoomId || !user) {
@@ -108,6 +149,14 @@ export default function ChatRoomPage({ user }: ChatRoomPageProps) {
           );
 
           if (matchedMessageIndex === -1) {
+            const alreadyExists = prevMessages.some(
+              (message) => message.id === receivedMessage.id,
+            );
+
+            if (alreadyExists) {
+              return prevMessages;
+            }
+
             return [...prevMessages, receivedMessage];
           }
 
@@ -121,6 +170,21 @@ export default function ChatRoomPage({ user }: ChatRoomPageProps) {
               writerName: message.writerName,
             };
           });
+        });
+
+        requestAnimationFrame(() => {
+          const chatBox = chatBoxRef.current;
+
+          if (!chatBox) {
+            return;
+          }
+
+          const distanceFromBottom =
+            chatBox.scrollHeight - chatBox.scrollTop - chatBox.clientHeight;
+
+          if (distanceFromBottom < 120) {
+            chatBox.scrollTop = chatBox.scrollHeight;
+          }
         });
       });
 
@@ -160,6 +224,84 @@ export default function ChatRoomPage({ user }: ChatRoomPageProps) {
       void client.deactivate();
     };
   }, [isLoggedIn, isInvalidRoomId, roomId, user]);
+
+  async function loadPreviousMessages() {
+    if (
+      !isLoggedIn ||
+      isInvalidRoomId ||
+      isLoadingMessages ||
+      isLoadingPreviousMessages ||
+      !hasNextMessages ||
+      messages.length === 0
+    ) {
+      return;
+    }
+
+    const chatBox = chatBoxRef.current;
+    const oldestMessage = messages[0];
+
+    const previousScrollHeight = chatBox?.scrollHeight ?? 0;
+    const previousScrollTop = chatBox?.scrollTop ?? 0;
+
+    try {
+      setIsLoadingPreviousMessages(true);
+
+      const response = await getChatMessages({
+        roomId,
+        limit: MESSAGE_LIMIT,
+        lastId: oldestMessage.id,
+        lastCreatedAtMillis: new Date(oldestMessage.createdAt).getTime(),
+      });
+
+      const previousMessages = [...response.items]
+        .reverse()
+        .map(mapChatMessageResponseItemToChatMessage);
+
+      setMessages((prevMessages) => {
+        const existingMessageIds = new Set(
+          prevMessages.map((message) => message.id),
+        );
+
+        const uniquePreviousMessages = previousMessages.filter(
+          (message) => !existingMessageIds.has(message.id),
+        );
+
+        return [...uniquePreviousMessages, ...prevMessages];
+      });
+
+      setHasNextMessages(response.hasNext);
+
+      requestAnimationFrame(() => {
+        const currentChatBox = chatBoxRef.current;
+
+        if (!currentChatBox) {
+          return;
+        }
+
+        const nextScrollHeight = currentChatBox.scrollHeight;
+        const addedScrollHeight = nextScrollHeight - previousScrollHeight;
+
+        currentChatBox.scrollTop = previousScrollTop + addedScrollHeight;
+      });
+    } catch (error) {
+      console.error(error);
+      alert('이전 메시지를 불러오지 못했습니다.');
+    } finally {
+      setIsLoadingPreviousMessages(false);
+    }
+  }
+
+  function handleChatBoxScroll() {
+    const chatBox = chatBoxRef.current;
+
+    if (!chatBox) {
+      return;
+    }
+
+    if (chatBox.scrollTop <= PREVIOUS_MESSAGE_SCROLL_THRESHOLD) {
+      void loadPreviousMessages();
+    }
+  }
 
   function publishMessage({
     content,
@@ -204,6 +346,16 @@ export default function ChatRoomPage({ user }: ChatRoomPageProps) {
 
     setMessages((prevMessages) => [...prevMessages, pendingMessage]);
     setMessageInput('');
+
+    requestAnimationFrame(() => {
+      const chatBox = chatBoxRef.current;
+
+      if (!chatBox) {
+        return;
+      }
+
+      chatBox.scrollTop = chatBox.scrollHeight;
+    });
 
     const isPublished = publishMessage({
       content,
@@ -310,10 +462,27 @@ export default function ChatRoomPage({ user }: ChatRoomPageProps) {
           />
         </div>
 
-        <div className="chat-room-box">
+        <div
+          ref={chatBoxRef}
+          className="chat-room-box"
+          onScroll={handleChatBoxScroll}
+        >
+          {isLoadingPreviousMessages && (
+            <div className="chat-room-history-notice">
+              이전 메시지를 불러오는 중입니다.
+            </div>
+          )}
+
+          {!isLoadingPreviousMessages && hasNextMessages && messages.length > 0 && (
+            <div className="chat-room-history-notice">
+              위로 스크롤하면 이전 메시지를 불러옵니다.
+            </div>
+          )}
+
           {messages.length > 0 ? (
             messages.map((message) => {
               const isMine = user.id === message.writerId;
+              const writerName = message.writerName ?? `사용자 ${message.writerId}`;
 
               return (
                 <div
@@ -323,7 +492,7 @@ export default function ChatRoomPage({ user }: ChatRoomPageProps) {
                   {!isMine && (
                     <div className="chat-message-side">
                       <div className="chat-message-avatar">
-                        {getAvatarText(message.writerName)}
+                        {getAvatarText(writerName)}
                       </div>
 
                       <span className="chat-message-name">
@@ -374,9 +543,11 @@ export default function ChatRoomPage({ user }: ChatRoomPageProps) {
           ) : (
             <div className="chat-room-empty-card">
               <p>
-                {isConnected
-                  ? '아직 메시지가 없습니다.'
-                  : '채팅 서버에 연결 중입니다.'}
+                {isLoadingMessages
+                  ? '최근 메시지를 불러오는 중입니다.'
+                  : isConnected
+                    ? '아직 메시지가 없습니다.'
+                    : '채팅 서버에 연결 중입니다.'}
               </p>
             </div>
           )}

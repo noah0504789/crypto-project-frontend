@@ -4,11 +4,30 @@ export type ChatMessage = {
   id: number;
   roomId: number;
   writerId: number;
-  writerName: string;
+  writerName?: string;
   content: string;
   createdAt: string;
   status: ChatMessageStatus;
   clientMessageId?: string;
+};
+
+export type ChatMessageResponseItem = {
+  id: number;
+  roomId: number;
+  writerId: number;
+  writerName?: string;
+  content: string;
+  createdAt: string;
+};
+
+export type ChatMessagesResponse = {
+  items: ChatMessageResponseItem[];
+  hasNext: boolean;
+};
+
+export type ChatMessageCursor = {
+  lastId?: number;
+  lastCreatedAtMillis?: number;
 };
 
 export type ChatMessageRequest = {

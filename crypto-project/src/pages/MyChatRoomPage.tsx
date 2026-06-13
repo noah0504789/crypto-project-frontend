@@ -1,13 +1,13 @@
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import type { User } from '@/types/user';
-import type { MyChatRoom, MyChatRoomCursor } from '@/types/chatRoom';
-import { formatKoreanChatTime } from '@/utils/dateFormatter';
-import { getMyChatRooms, leaveChatRoom } from '@/apis/chatApi';
-import { createStompClient } from '@/apis/stompClient';
-import { subscribeMyChatRoomBadge } from '@/apis/chatStompApi';
-import LoadingButton from '@/components/Button/LoadingButton';
-import './MyChatRoomPage.css';
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import type { User } from "@/types/user";
+import type { MyChatRoom, MyChatRoomCursor } from "@/types/chatRoom";
+import { formatKoreanChatTime } from "@/utils/dateFormatter";
+import { getMyChatRooms, leaveChatRoom } from "@/apis/chatRoomApi";
+import { createStompClient } from "@/apis/stompClient";
+import { subscribeMyChatRoomBadge } from "@/apis/chatStompApi";
+import LoadingButton from "@/components/Button/LoadingButton";
+import "./MyChatRoomPage.css";
 
 type MyChatRoomsPageProps = {
   user: User | null;
@@ -18,38 +18,37 @@ const mockMyChatRooms: MyChatRoom[] = [
   {
     id: 101,
     hostId: 1,
-    title: '비트코인 단기 시황방',
-    category: 'CRYPTO_CURRENCY',
-    description: 'BTC 단기 흐름과 주요 지지/저항을 이야기하는 방입니다.',
-    lastMsgContent: '오늘 저항선은 108K 부근으로 보입니다.',
-    lastMsgCreatedAt: '2026-06-11T10:10:00',
+    title: "비트코인 단기 시황방",
+    category: "CRYPTO_CURRENCY",
+    description: "BTC 단기 흐름과 주요 지지/저항을 이야기하는 방입니다.",
+    lastMsgContent: "오늘 저항선은 108K 부근으로 보입니다.",
+    lastMsgCreatedAt: "2026-06-11T10:10:00",
     unreadMsgCnt: 3,
     memberCnt: 128,
   },
   {
     id: 102,
     hostId: 12,
-    title: '이더리움 장기 투자방',
-    category: 'CRYPTO_CURRENCY',
-    description: 'ETH 장기 관점과 생태계 뉴스를 공유합니다.',
-    lastMsgContent: 'ETF 자금 유입 체크해볼게요.',
-    lastMsgCreatedAt: '2026-06-11T09:40:00',
+    title: "이더리움 장기 투자방",
+    category: "CRYPTO_CURRENCY",
+    description: "ETH 장기 관점과 생태계 뉴스를 공유합니다.",
+    lastMsgContent: "ETF 자금 유입 체크해볼게요.",
+    lastMsgCreatedAt: "2026-06-11T09:40:00",
     unreadMsgCnt: 0,
     memberCnt: 86,
   },
   {
     id: 103,
     hostId: 1,
-    title: '알트코인 관찰방',
-    category: 'CRYPTO_CURRENCY',
-    description: '거래량과 테마 중심으로 알트코인을 함께 봅니다.',
+    title: "알트코인 관찰방",
+    category: "CRYPTO_CURRENCY",
+    description: "거래량과 테마 중심으로 알트코인을 함께 봅니다.",
     lastMsgContent: null,
     lastMsgCreatedAt: null,
     unreadMsgCnt: 0,
     memberCnt: 64,
   },
 ];
-
 
 export default function MyChatRoomsPage({ user }: MyChatRoomsPageProps) {
   const isLoggedIn = user !== null;
@@ -83,9 +82,9 @@ export default function MyChatRoomsPage({ user }: MyChatRoomsPageProps) {
         setMyChatRooms(response.items);
         setHasNext(response.hasNext);
       } catch (error) {
-        console.error('failed to load my chat rooms:', error);
+        console.error("failed to load my chat rooms:", error);
 
-        if (!isCancelled) {          
+        if (!isCancelled) {
           // setMyChatRooms([]);
           setMyChatRooms(mockMyChatRooms);
           setHasNext(false);
@@ -164,7 +163,7 @@ export default function MyChatRoomsPage({ user }: MyChatRoomsPageProps) {
       setMyChatRooms((prevRooms) => [...prevRooms, ...response.items]);
       setHasNext(response.hasNext);
     } catch (error) {
-      console.error('failed to load more my chat rooms:', error);
+      console.error("failed to load more my chat rooms:", error);
     } finally {
       setIsLoadingMore(false);
     }
@@ -200,7 +199,7 @@ export default function MyChatRoomsPage({ user }: MyChatRoomsPageProps) {
   }
 
   async function handleLeaveRoom(roomId: number) {
-    const confirmed = window.confirm('이 채팅방에서 나가시겠습니까?');
+    const confirmed = window.confirm("이 채팅방에서 나가시겠습니까?");
 
     if (!confirmed) {
       return;
@@ -215,10 +214,10 @@ export default function MyChatRoomsPage({ user }: MyChatRoomsPageProps) {
         prevRooms.filter((room) => room.id !== roomId),
       );
 
-      alert('채팅방에서 나갔습니다.');
+      alert("채팅방에서 나갔습니다.");
     } catch (error) {
-      console.error('failed to leave chat room:', error);
-      alert('채팅방 나가기 중 문제가 발생했습니다.');
+      console.error("failed to leave chat room:", error);
+      alert("채팅방 나가기 중 문제가 발생했습니다.");
     } finally {
       setLeavingRoomId(null);
     }
@@ -262,7 +261,7 @@ export default function MyChatRoomsPage({ user }: MyChatRoomsPageProps) {
                 <article
                   key={room.id}
                   className={`my-chat-room-card ${
-                    hasUnread ? 'has-unread' : ''
+                    hasUnread ? "has-unread" : ""
                   }`}
                 >
                   <div className="my-chat-room-main">
@@ -271,7 +270,7 @@ export default function MyChatRoomsPage({ user }: MyChatRoomsPageProps) {
 
                       {hasUnread && (
                         <span className="my-chat-room-unread-badge">
-                          {room.unreadMsgCnt > 99 ? '99+' : room.unreadMsgCnt}
+                          {room.unreadMsgCnt > 99 ? "99+" : room.unreadMsgCnt}
                         </span>
                       )}
                     </div>
@@ -303,12 +302,12 @@ export default function MyChatRoomsPage({ user }: MyChatRoomsPageProps) {
                     <div className="my-chat-room-last-message">
                       <strong>최근 메시지</strong>
                       <span>
-                        {room.lastMsgContent ?? '최근 메시지가 없습니다.'}
+                        {room.lastMsgContent ?? "최근 메시지가 없습니다."}
                       </span>
                       <em>
                         {room.lastMsgCreatedAt
                           ? formatKoreanChatTime(room.lastMsgCreatedAt)
-                          : '최근 메시지 없음'}
+                          : "최근 메시지 없음"}
                       </em>
                     </div>
                   </div>

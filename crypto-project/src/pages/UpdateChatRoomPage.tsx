@@ -1,10 +1,10 @@
-import { useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { updateChatRoom } from '@/apis/chatApi';
-import LoadingButton from '@/components/Button/LoadingButton';
-import { CHAT_ROOM_CATEGORIES, type ChatRoomCategory } from '@/types/chatRoom';
-import type { User } from '@/types/user';
-import './UpdateChatRoomPage.css';
+import { useState } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { updateChatRoom } from "@/apis/chatRoomApi";
+import LoadingButton from "@/components/Button/LoadingButton";
+import { CHAT_ROOM_CATEGORIES, type ChatRoomCategory } from "@/types/chatRoom";
+import type { User } from "@/types/user";
+import "./UpdateChatRoomPage.css";
 
 type UpdateChatRoomPageProps = {
   user: User | null;
@@ -24,17 +24,19 @@ export default function UpdateChatRoomPage({ user }: UpdateChatRoomPageProps) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  const roomIdParam = searchParams.get('roomId');
-  const titleParam = searchParams.get('title') ?? '';
-  const descriptionParam = searchParams.get('description') ?? '';
-  const categoryParam = searchParams.get('category') ?? 'CRYPTO_CURRENCY';
+  const roomIdParam = searchParams.get("roomId");
+  const titleParam = searchParams.get("title") ?? "";
+  const descriptionParam = searchParams.get("description") ?? "";
+  const categoryParam = searchParams.get("category") ?? "CRYPTO_CURRENCY";
 
   const roomId = roomIdParam ? Number(roomIdParam) : NaN;
 
   const [form, setForm] = useState<UpdateChatRoomForm>({
     title: titleParam,
     description: descriptionParam,
-    category: isChatRoomCategory(categoryParam) ? categoryParam : 'CRYPTO_CURRENCY',
+    category: isChatRoomCategory(categoryParam)
+      ? categoryParam
+      : "CRYPTO_CURRENCY",
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -75,7 +77,7 @@ export default function UpdateChatRoomPage({ user }: UpdateChatRoomPageProps) {
     event.preventDefault();
 
     if (isInvalidRoomId) {
-      alert('수정할 채팅방 정보가 올바르지 않습니다.');
+      alert("수정할 채팅방 정보가 올바르지 않습니다.");
       return;
     }
 
@@ -83,12 +85,12 @@ export default function UpdateChatRoomPage({ user }: UpdateChatRoomPageProps) {
     const description = form.description.trim();
 
     if (!title) {
-      alert('채팅방 제목을 입력해주세요.');
+      alert("채팅방 제목을 입력해주세요.");
       return;
     }
 
     if (!description) {
-      alert('채팅방 설명을 입력해주세요.');
+      alert("채팅방 설명을 입력해주세요.");
       return;
     }
 
@@ -101,11 +103,11 @@ export default function UpdateChatRoomPage({ user }: UpdateChatRoomPageProps) {
         category: form.category,
       });
 
-      alert('채팅방이 수정되었습니다.');
-      navigate('/chat/my');
+      alert("채팅방이 수정되었습니다.");
+      navigate("/chat/my");
     } catch (error) {
-      console.error('failed to update chat room:', error);
-      alert('채팅방 수정 중 문제가 발생했습니다.');
+      console.error("failed to update chat room:", error);
+      alert("채팅방 수정 중 문제가 발생했습니다.");
     } finally {
       setIsSubmitting(false);
     }

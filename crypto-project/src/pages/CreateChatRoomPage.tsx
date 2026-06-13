@@ -1,10 +1,10 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { createChatRoom } from '@/apis/chatApi';
-import LoadingButton from '@/components/Button/LoadingButton';
-import type { ChatRoomCategory } from '@/types/chatRoom';
-import type { User } from '@/types/user';
-import './CreateChatRoomPage.css';
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { createChatRoom } from "@/apis/chatRoomApi";
+import LoadingButton from "@/components/Button/LoadingButton";
+import type { ChatRoomCategory } from "@/types/chatRoom";
+import type { User } from "@/types/user";
+import "./CreateChatRoomPage.css";
 
 type CreateChatRoomPageProps = {
   user: User | null;
@@ -20,9 +20,9 @@ export default function CreateChatRoomPage({ user }: CreateChatRoomPageProps) {
   const navigate = useNavigate();
 
   const [form, setForm] = useState<CreateChatRoomForm>({
-    title: '',
-    description: '',
-    category: 'CRYPTO_CURRENCY',
+    title: "",
+    description: "",
+    category: "CRYPTO_CURRENCY",
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -59,12 +59,12 @@ export default function CreateChatRoomPage({ user }: CreateChatRoomPageProps) {
     const description = form.description.trim();
 
     if (!title) {
-      alert('채팅방 제목을 입력해주세요.');
+      alert("채팅방 제목을 입력해주세요.");
       return;
     }
 
     if (!description) {
-      alert('채팅방 설명을 입력해주세요.');
+      alert("채팅방 설명을 입력해주세요.");
       return;
     }
 
@@ -77,11 +77,11 @@ export default function CreateChatRoomPage({ user }: CreateChatRoomPageProps) {
         category: form.category,
       });
 
-      alert('채팅방이 생성되었습니다.');
-      navigate('/chat/my');
+      alert("채팅방이 생성되었습니다.");
+      navigate("/chat/my");
     } catch (error) {
-      console.error('failed to create chat room:', error);
-      alert('채팅방 생성 중 문제가 발생했습니다.');
+      console.error("failed to create chat room:", error);
+      alert("채팅방 생성 중 문제가 발생했습니다.");
     } finally {
       setIsSubmitting(false);
     }

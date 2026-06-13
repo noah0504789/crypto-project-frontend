@@ -1,23 +1,25 @@
-import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { getPopularChatRooms } from '@/apis/chatApi';
-import LoadingButton from '@/components/Button/LoadingButton';
-import type { User } from '@/types/user';
-import type { PopularChatRoom, PopularChatRoomCursor } from '@/types/chatRoom';
-import { formatKoreanDateTime } from '@/utils/dateFormatter';
-import './ChatPage.css';
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { getPopularChatRooms } from "@/apis/chatRoomApi";
+import LoadingButton from "@/components/Button/LoadingButton";
+import type { User } from "@/types/user";
+import type { PopularChatRoom, PopularChatRoomCursor } from "@/types/chatRoom";
+import { formatKoreanDateTime } from "@/utils/dateFormatter";
+import "./ChatPage.css";
 
 type ChatPageProps = {
   user: User | null;
 };
 
 const POPULAR_CHAT_ROOM_LIMIT = 10;
-const DEFAULT_CATEGORY = 'CRYPTO_CURRENCY';
+const DEFAULT_CATEGORY = "CRYPTO_CURRENCY";
 
 export default function ChatPage({ user }: ChatPageProps) {
   const navigate = useNavigate();
 
-  const [popularChatRooms, setPopularChatRooms] = useState<PopularChatRoom[]>([]);
+  const [popularChatRooms, setPopularChatRooms] = useState<PopularChatRoom[]>(
+    [],
+  );
   const [hasNext, setHasNext] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -41,7 +43,7 @@ export default function ChatPage({ user }: ChatPageProps) {
         setPopularChatRooms(response.items);
         setHasNext(response.hasNext);
       } catch (error) {
-        console.error('failed to load popular chat rooms:', error);
+        console.error("failed to load popular chat rooms:", error);
 
         if (!isCancelled) {
           setPopularChatRooms([]);
@@ -72,13 +74,10 @@ export default function ChatPage({ user }: ChatPageProps) {
         lastPopularity: cursor.lastPopularity,
       });
 
-      setPopularChatRooms((prevRooms) => [
-        ...prevRooms,
-        ...response.items,
-      ]);
+      setPopularChatRooms((prevRooms) => [...prevRooms, ...response.items]);
       setHasNext(response.hasNext);
     } catch (error) {
-      console.error('failed to load more popular chat rooms:', error);
+      console.error("failed to load more popular chat rooms:", error);
     } finally {
       setIsLoadingMore(false);
     }
@@ -99,7 +98,7 @@ export default function ChatPage({ user }: ChatPageProps) {
 
   function handleEnterRoom(roomId: number) {
     if (!isLoggedIn) {
-      alert('로그인이 필요한 서비스입니다.');
+      alert("로그인이 필요한 서비스입니다.");
       return;
     }
 
@@ -180,7 +179,7 @@ export default function ChatPage({ user }: ChatPageProps) {
           )}
         </>
       ) : (
-        <div className="popular-chat-room-empty-card">          
+        <div className="popular-chat-room-empty-card">
           아직 인기 채팅방이 없습니다.
         </div>
       )}
