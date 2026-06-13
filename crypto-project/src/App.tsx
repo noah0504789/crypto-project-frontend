@@ -24,7 +24,7 @@ export default function App() {
   const navigate = useNavigate();
 
   const [user, setUser] = useState<User | null>({
-    id: 1,
+    id: "1",
     name: 'noah',
     email: 'noah0969@gmail.com',
     profileImageUrl: '',
@@ -108,7 +108,7 @@ export default function App() {
           <Route path="/price-alerts" element={<PriceAlertsPage user={user} />} />
           <Route path="/account" element={<AccountPage user={user} />}>
             <Route index element={<Navigate to="profile-edit" replace />} />
-            <Route path="profile-edit" element={<ProfileEditPage user={user} />} />
+            <Route path="profile-edit" element={<ProfileEditPage user={user} onUserUpdated={setUser} />}/>
           </Route>
           <Route path="/login-success" element={<LoginSuccessPage />} />          
         </Routes>

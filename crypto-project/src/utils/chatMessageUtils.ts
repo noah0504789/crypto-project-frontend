@@ -16,7 +16,7 @@ export function createPendingChatMessage({
   clientMessageId,
 }: {
   roomId: number;
-  writerId: number;
+  writerId: string;
   writerName: string;
   content: string;
   clientMessageId: string;
@@ -57,7 +57,7 @@ export function mapBroadcastEventToChatMessage({
   return {
     id: Number(event.payload.id),
     roomId: Number(event.payload.roomId),
-    writerId: Number(event.payload.writerId),
+    writerId: String(event.payload.writerId),
     writerName: fallbackWriterName,
     content: event.payload.content,
     createdAt: event.payload.createdAt,

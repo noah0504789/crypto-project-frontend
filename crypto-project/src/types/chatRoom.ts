@@ -8,7 +8,7 @@ export type PopularChatRoom = {
   description: string;
   popularity: number;
   memberCnt: number;
-  hostId: number;
+  hostId: string;
   createdAt: string;
 };
 
@@ -24,7 +24,7 @@ export type PopularChatRoomCursor = {
 
 export type MyChatRoom = {
   id: number;
-  hostId: number;
+  hostId: string;
   title: string;
   category: ChatRoomCategory;
   description: string;

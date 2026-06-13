@@ -3,7 +3,7 @@ export type ChatMessageStatus = 'sent' | 'pending' | 'failed';
 export type ChatMessage = {
   id: number;
   roomId: number;
-  writerId: number;
+  writerId: string;
   writerName?: string;
   content: string;
   createdAt: string;
@@ -14,7 +14,7 @@ export type ChatMessage = {
 export type ChatMessageResponseItem = {
   id: number;
   roomId: number;
-  writerId: number;
+  writerId: string;
   writerName?: string;
   content: string;
   createdAt: string;

@@ -185,6 +185,13 @@
   box-shadow: 0 10px 22px rgba(37, 99, 235, 0.18);
 }
 
+.profile-edit-submit-button:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
 .profile-page-empty-card {
   max-width: 520px;
   margin: 60px auto;

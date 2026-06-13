@@ -131,7 +131,7 @@ export default function ChatRoomPage({ user }: ChatRoomPageProps) {
       setIsConnected(true);
 
       subscribeChatRoomMessages(client, roomId, (event) => {
-        const writerId = Number(event.payload.writerId);
+        const writerId = String(event.payload.writerId);
 
         const fallbackWriterName =
           writerId === user.id ? user.name : `사용자 ${event.payload.writerId}`;

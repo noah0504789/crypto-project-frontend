@@ -17,7 +17,7 @@ const MY_CHAT_ROOM_LIMIT = 10;
 const mockMyChatRooms: MyChatRoom[] = [
   {
     id: 101,
-    hostId: 1,
+    hostId: "1",
     title: "비트코인 단기 시황방",
     category: "CRYPTO_CURRENCY",
     description: "BTC 단기 흐름과 주요 지지/저항을 이야기하는 방입니다.",
@@ -28,7 +28,7 @@ const mockMyChatRooms: MyChatRoom[] = [
   },
   {
     id: 102,
-    hostId: 12,
+    hostId: "12",
     title: "이더리움 장기 투자방",
     category: "CRYPTO_CURRENCY",
     description: "ETH 장기 관점과 생태계 뉴스를 공유합니다.",
@@ -39,7 +39,7 @@ const mockMyChatRooms: MyChatRoom[] = [
   },
   {
     id: 103,
-    hostId: 1,
+    hostId: "1",
     title: "알트코인 관찰방",
     category: "CRYPTO_CURRENCY",
     description: "거래량과 테마 중심으로 알트코인을 함께 봅니다.",
