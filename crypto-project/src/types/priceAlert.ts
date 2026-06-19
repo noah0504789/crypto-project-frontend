@@ -30,16 +30,46 @@ export type PriceAlertSettingForm = {
   enabled: boolean;
 
   /**
+   * 저장 시 삭제할 설정인지 여부
+   * true면 PUT 요청의 deletes에 포함됨
+   */
+  markedForDelete: boolean;
+
+  /**
    * 화면 선택용 퍼센트 값
    * 예: "3" = 3%
    */
   targetChangeRatePercent: PriceAlertTargetChangeRatePercent;
 };
 
+/**
+ * GET /price-alerts/me
+ */
 export type GetMyPriceAlertSettingsResponse = {
   settings: PriceAlertSetting[];
 };
 
+/**
+ * PUT /price-alerts/me
+ */
+export type CreatePriceAlertSettingRequest = {
+  code: string;
+  enabled: boolean;
+  targetChangeRate: number;
+};
+
+export type UpdatePriceAlertSettingRequest = {
+  code: string;
+  enabled: boolean;
+  targetChangeRate: number;
+};
+
+export type DeletePriceAlertSettingRequest = {
+  code: string;
+};
+
 export type UpdateMyPriceAlertSettingsRequest = {
-  settings: PriceAlertSetting[];
+  creates: CreatePriceAlertSettingRequest[];
+  updates: UpdatePriceAlertSettingRequest[];
+  deletes: DeletePriceAlertSettingRequest[];
 };

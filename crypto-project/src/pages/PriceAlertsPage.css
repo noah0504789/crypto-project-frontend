@@ -7,6 +7,7 @@
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
+  gap: 16px;
 
   margin-bottom: 24px;
 }
@@ -27,6 +28,40 @@
   font-weight: 500;
 }
 
+.price-alert-add-button {
+  flex-shrink: 0;
+
+  height: 42px;
+  padding: 0 16px;
+
+  border: none;
+  border-radius: 999px;
+
+  background: #111827;
+  color: #ffffff;
+
+  font-size: 14px;
+  font-weight: 900;
+
+  cursor: pointer;
+
+  transition:
+    background-color 0.15s ease,
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.price-alert-add-button:hover:not(:disabled) {
+  background: #020617;
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.16);
+}
+
+.price-alert-add-button:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+}
+
 .price-alerts-form {
   display: flex;
   flex-direction: column;
@@ -40,10 +75,12 @@
 }
 
 .price-alert-card {
+  position: relative;
+
   display: grid;
-  grid-template-columns: 120px 1fr 220px;
+  grid-template-columns: 118px minmax(160px, 1fr) 150px 84px;
   align-items: center;
-  gap: 18px;
+  gap: 16px;
 
   padding: 18px 20px;
 
@@ -52,10 +89,13 @@
 
   background: #ffffff;
 
+  overflow: hidden;
+
   transition:
     border-color 0.15s ease,
     background-color 0.15s ease,
     box-shadow 0.15s ease,
+    opacity 0.15s ease,
     transform 0.15s ease;
 }
 
@@ -70,33 +110,97 @@
   box-shadow: 0 12px 26px rgba(15, 23, 42, 0.08);
 }
 
-.price-alert-check-area {
-  display: flex;
+.price-alert-card.marked-for-delete {
+  border-color: #fecaca;
+  background: #fff5f5;
+  opacity: 0.68;
+}
+
+.price-alert-card.marked-for-delete::after {
+  content: "";
+
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  top: 50%;
+
+  height: 3px;
+
+  border-radius: 999px;
+
+  background: #ef4444;
+
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.price-alert-card.marked-for-delete:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+.price-alert-check-area,
+.price-alert-delete-area {
+  display: inline-flex;
   align-items: center;
   gap: 8px;
 
-  color: #374151;
+  width: fit-content;
+
   font-size: 14px;
   font-weight: 800;
 
   cursor: pointer;
 }
 
-.price-alert-check-area input {
-  width: 18px;
-  height: 18px;
+.price-alert-check-area {
+  color: #374151;
+}
+
+.price-alert-delete-area {
+  justify-self: end;
+
+  padding: 8px 10px;
+
+  border: 1px solid #fecaca;
+  border-radius: 999px;
+
+  background: #ffffff;
+  color: #dc2626;
+}
+
+.price-alert-card.marked-for-delete .price-alert-delete-area {
+  background: #fee2e2;
+}
+
+.price-alert-check-area input,
+.price-alert-delete-area input {
+  width: 17px;
+  height: 17px;
 
   cursor: pointer;
 }
 
-.price-alert-check-label {
+.price-alert-check-area input:disabled {
+  cursor: not-allowed;
+}
+
+.price-alert-check-label,
+.price-alert-delete-label {
   white-space: nowrap;
+}
+
+.price-alert-delete-label {
+  color: #dc2626;
+  font-size: 13px;
+  font-weight: 900;
 }
 
 .price-alert-coin-info {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  min-width: 0;
 }
 
 .price-alert-coin-info strong {
@@ -115,12 +219,47 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
+  width: 140px;
 }
 
 .price-alert-rate-field label {
   color: #4b5563;
   font-size: 12px;
   font-weight: 800;
+}
+
+.price-alert-select-wrapper {
+  width: 100%;
+}
+
+.price-alert-select-wrapper select {
+  width: 100%;
+  height: 40px;
+  padding: 0 12px;
+
+  border: 1px solid #d1d5db;
+  border-radius: 12px;
+
+  background: #ffffff;
+  color: #111827;
+
+  font-size: 14px;
+  font-weight: 800;
+
+  outline: none;
+
+  cursor: pointer;
+}
+
+.price-alert-select-wrapper select:disabled {
+  background: #f3f4f6;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.price-alert-select-wrapper select:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
 }
 
 .price-alerts-submit-area {
@@ -184,6 +323,48 @@
   cursor: not-allowed;
 }
 
+.price-alerts-submit-buttons {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  flex-shrink: 0;
+}
+
+.price-alerts-reset-button {
+  flex-shrink: 0;
+
+  height: 42px;
+  padding: 0 16px;
+
+  border: 1px solid #d1d5db;
+  border-radius: 999px;
+
+  background: #ffffff;
+  color: #374151;
+
+  font-size: 14px;
+  font-weight: 900;
+
+  cursor: pointer;
+
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.price-alerts-reset-button:hover:not(:disabled) {
+  border-color: #9ca3af;
+  background: #f9fafb;
+  color: #111827;
+}
+
+.price-alerts-reset-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 .price-alerts-empty-card {
   max-width: 520px;
   margin: 80px auto 0;
@@ -196,12 +377,22 @@
   text-align: center;
 }
 
-.price-alerts-empty-card h1 {
+.price-alerts-form .price-alerts-empty-card {
+  max-width: none;
+  margin: 0;
+}
+
+.price-alerts-empty-card h1,
+.price-alerts-empty-card h2 {
   margin: 0 0 10px;
 
   color: #111827;
   font-size: 26px;
   font-weight: 900;
+}
+
+.price-alerts-empty-card h2 {
+  font-size: 22px;
 }
 
 .price-alerts-empty-card p {
@@ -212,18 +403,238 @@
   font-weight: 600;
 }
 
-@media (max-width: 720px) {
-  .price-alert-card {
-    grid-template-columns: 1fr;
-    align-items: stretch;
-  }
+/* Modal */
 
-  .price-alerts-submit-area {
-    flex-direction: column;
-    align-items: stretch;
-  }
+.price-alert-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
 
-  .price-alerts-submit-button {
-    width: 100%;
-  }
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 24px;
+
+  background: rgba(15, 23, 42, 0.48);
+  backdrop-filter: blur(4px);
+}
+
+.price-alert-modal {
+  width: min(460px, 100%);
+  max-height: min(640px, calc(100vh - 48px));
+
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+
+  padding: 22px;
+
+  border-radius: 22px;
+
+  background: #ffffff;
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.28);
+}
+
+.price-alert-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.price-alert-modal-header h2 {
+  margin: 0;
+
+  color: #111827;
+  font-size: 22px;
+  font-weight: 900;
+}
+
+.price-alert-modal-header p {
+  margin: 6px 0 0;
+
+  color: #6b7280;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.price-alert-modal-close-button {
+  flex-shrink: 0;
+
+  height: 36px;
+  padding: 0 12px;
+
+  border: none;
+  border-radius: 999px;
+
+  background: #f3f4f6;
+  color: #374151;
+
+  font-size: 13px;
+  font-weight: 900;
+
+  cursor: pointer;
+
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.price-alert-modal-close-button:hover {
+  background: #e5e7eb;
+  color: #111827;
+}
+
+.price-alert-modal-empty {
+  margin: 0;
+  padding: 28px 0;
+
+  color: #6b7280;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.price-alert-market-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  max-height: 360px;
+  overflow-y: auto;
+
+  padding-right: 4px;
+}
+
+.price-alert-market-item {
+  display: grid;
+  grid-template-columns: 20px 1fr;
+  align-items: center;
+  column-gap: 12px;
+
+  width: 100%;
+  padding: 14px 16px;
+
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+
+  background: #ffffff;
+  color: #111827;
+
+  cursor: pointer;
+
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease,
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.price-alert-market-item:hover {
+  border-color: #bfdbfe;
+  background: #eff6ff;
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(37, 99, 235, 0.08);
+}
+
+.price-alert-market-item.selected {
+  border-color: #2563eb;
+  background: #eff6ff;
+  box-shadow: 0 10px 22px rgba(37, 99, 235, 0.1);
+}
+
+.price-alert-market-item input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+
+  cursor: pointer;
+}
+
+.price-alert-market-item-text {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+
+  min-width: 0;
+}
+
+.price-alert-market-item-text strong {
+  min-width: 0;
+
+  color: #111827;
+  font-size: 15px;
+  font-weight: 900;
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.price-alert-market-item-text span {
+  flex-shrink: 0;
+
+  color: #6b7280;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.price-alert-modal-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+
+  padding-top: 16px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.price-alert-modal-reset-button,
+.price-alert-modal-add-button {
+  min-height: 42px;
+  padding: 0 16px;
+
+  border-radius: 999px;
+
+  font-size: 14px;
+  font-weight: 900;
+
+  cursor: pointer;
+
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.price-alert-modal-reset-button {
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  color: #374151;
+}
+
+.price-alert-modal-reset-button:hover:not(:disabled) {
+  border-color: #9ca3af;
+  background: #f9fafb;
+}
+
+.price-alert-modal-add-button {
+  border: none;
+  background: #111827;
+  color: #ffffff;
+}
+
+.price-alert-modal-add-button:hover:not(:disabled) {
+  background: #020617;
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.16);
+}
+
+.price-alert-modal-reset-button:disabled,
+.price-alert-modal-add-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }

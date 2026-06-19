@@ -21,7 +21,7 @@ function isPriceAlertTargetChangeRatePercent(
 function convertRateToPercent(
   targetChangeRate: number,
 ): PriceAlertTargetChangeRatePercent {
-  const percent = String(targetChangeRate * 100);
+  const percent = String(Math.round(targetChangeRate * 100));
 
   if (isPriceAlertTargetChangeRatePercent(percent)) {
     return percent;
@@ -30,34 +30,125 @@ function convertRateToPercent(
   return DEFAULT_TARGET_CHANGE_RATE_PERCENT;
 }
 
+function convertPercentToRate(
+  targetChangeRatePercent: PriceAlertTargetChangeRatePercent,
+): number {
+  return Number(targetChangeRatePercent) / 100;
+}
+
+function hasSameSetting(
+  savedSetting: PriceAlertSetting,
+  formSetting: PriceAlertSettingForm,
+): boolean {
+  return (
+    savedSetting.enabled === formSetting.enabled &&
+    savedSetting.targetChangeRate ===
+      convertPercentToRate(formSetting.targetChangeRatePercent)
+  );
+}
+
 export function convertSettingsToForm(
   marketList: PriceAlertMarket[],
   savedSettings: PriceAlertSetting[],
 ): PriceAlertSettingForm[] {
-  return marketList.map((market) => {
-    const savedSetting = savedSettings.find(
-      (setting) => setting.code === market.code,
-    );
+  const marketMap = new Map(marketList.map((market) => [market.code, market]));
 
-    return {
-      code: market.code,
-      koreanName: market.koreanName,
-      enabled: savedSetting?.enabled ?? false,
-      targetChangeRatePercent: savedSetting
-        ? convertRateToPercent(savedSetting.targetChangeRate)
-        : DEFAULT_TARGET_CHANGE_RATE_PERCENT,
-    };
-  });
+  return savedSettings
+    .map((setting) => {
+      const market = marketMap.get(setting.code);
+
+      if (!market) {
+        return null;
+      }
+
+      return {
+        code: setting.code,
+        koreanName: market.koreanName,
+        enabled: setting.enabled,
+        markedForDelete: false,
+        targetChangeRatePercent: convertRateToPercent(
+          setting.targetChangeRate,
+        ),
+      };
+    })
+    .filter((setting): setting is PriceAlertSettingForm => setting !== null);
+}
+
+export function createEmptyPriceAlertSettingForm(
+  market: PriceAlertMarket,
+): PriceAlertSettingForm {
+  return {
+    code: market.code,
+    koreanName: market.koreanName,
+    enabled: true,
+    markedForDelete: false,
+    targetChangeRatePercent: DEFAULT_TARGET_CHANGE_RATE_PERCENT,
+  };
 }
 
 export function convertFormToRequest(
   formSettings: PriceAlertSettingForm[],
+  savedSettings: PriceAlertSetting[],
 ): UpdateMyPriceAlertSettingsRequest {
+  const savedSettingMap = new Map(
+    savedSettings.map((setting) => [setting.code, setting]),
+  );
+
+  const creates: UpdateMyPriceAlertSettingsRequest['creates'] = [];
+  const updates: UpdateMyPriceAlertSettingsRequest['updates'] = [];
+  const deletes: UpdateMyPriceAlertSettingsRequest['deletes'] = [];
+
+  for (const formSetting of formSettings) {
+    const savedSetting = savedSettingMap.get(formSetting.code);
+
+    if (formSetting.markedForDelete) {
+      if (savedSetting) {
+        deletes.push({
+          code: formSetting.code,
+        });
+      }
+
+      continue;
+    }
+
+    if (!savedSetting) {
+      creates.push({
+        code: formSetting.code,
+        enabled: formSetting.enabled,
+        targetChangeRate: convertPercentToRate(
+          formSetting.targetChangeRatePercent,
+        ),
+      });
+
+      continue;
+    }
+
+    if (!hasSameSetting(savedSetting, formSetting)) {
+      updates.push({
+        code: formSetting.code,
+        enabled: formSetting.enabled,
+        targetChangeRate: convertPercentToRate(
+          formSetting.targetChangeRatePercent,
+        ),
+      });
+    }
+  }
+
   return {
-    settings: formSettings.map((setting) => ({
+    creates,
+    updates,
+    deletes,
+  };
+}
+
+export function convertFormToSavedSettings(
+  formSettings: PriceAlertSettingForm[],
+): PriceAlertSetting[] {
+  return formSettings
+    .filter((setting) => !setting.markedForDelete)
+    .map((setting) => ({
       code: setting.code,
       enabled: setting.enabled,
-      targetChangeRate: Number(setting.targetChangeRatePercent) / 100,
-    })),
-  };
+      targetChangeRate: convertPercentToRate(setting.targetChangeRatePercent),
+    }));
 }

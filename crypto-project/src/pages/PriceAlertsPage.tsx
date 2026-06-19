@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { type FormEvent, useState } from 'react';
 import type { User } from '@/types/user';
 import {
   PRICE_ALERT_TARGET_CHANGE_RATE_PERCENT_OPTIONS,
@@ -9,7 +9,9 @@ import {
 } from '@/types/priceAlert';
 import {
   convertFormToRequest,
+  convertFormToSavedSettings,
   convertSettingsToForm,
+  createEmptyPriceAlertSettingForm,
 } from '@/utils/priceAlertMapper';
 import './PriceAlertsPage.css';
 
@@ -59,13 +61,81 @@ const mockSavedSettings: PriceAlertSetting[] = [
 ];
 
 export default function PriceAlertsPage({ user }: PriceAlertsPageProps) {
+  const [savedSettings, setSavedSettings] =
+    useState<PriceAlertSetting[]>(mockSavedSettings);
+
   const [formSettings, setFormSettings] = useState<PriceAlertSettingForm[]>(
     convertSettingsToForm(markets, mockSavedSettings),
   );
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isMarketModalOpen, setIsMarketModalOpen] = useState(false);
+  const [selectedMarketCodes, setSelectedMarketCodes] = useState<Set<string>>(
+    new Set(),
+  );
 
   const isLoggedIn = user !== null;
+
+  const selectableMarkets = markets.filter(
+    (market) => !formSettings.some((setting) => setting.code === market.code),
+  );
+
+  const currentRequestBody = convertFormToRequest(formSettings, savedSettings);
+
+  const hasUnsavedChanges =
+    currentRequestBody.creates.length > 0 ||
+    currentRequestBody.updates.length > 0 ||
+    currentRequestBody.deletes.length > 0;
+
+  function handleOpenMarketModal() {
+    setSelectedMarketCodes(new Set());
+    setIsMarketModalOpen(true);
+  }
+
+  function handleCloseMarketModal() {
+    setSelectedMarketCodes(new Set());
+    setIsMarketModalOpen(false);
+  }
+
+  function handleToggleSelectedMarket(code: string) {
+    setSelectedMarketCodes((prevCodes) => {
+      const nextCodes = new Set(prevCodes);
+
+      if (nextCodes.has(code)) {
+        nextCodes.delete(code);
+      } else {
+        nextCodes.add(code);
+      }
+
+      return nextCodes;
+    });
+  }
+
+  function handleResetSelectedMarkets() {
+    setSelectedMarketCodes(new Set());
+  }
+
+  function handleAddSelectedMarkets() {
+    if (selectedMarketCodes.size === 0) {
+      return;
+    }
+
+    const selectedMarkets = selectableMarkets.filter((market) =>
+      selectedMarketCodes.has(market.code),
+    );
+
+    if (selectedMarkets.length === 0) {
+      return;
+    }
+
+    setFormSettings((prevSettings) => [
+      ...prevSettings,
+      ...selectedMarkets.map(createEmptyPriceAlertSettingForm),
+    ]);
+
+    setSelectedMarketCodes(new Set());
+    setIsMarketModalOpen(false);
+  }
 
   function handleToggleEnabled(code: string) {
     setFormSettings((prevSettings) =>
@@ -74,6 +144,19 @@ export default function PriceAlertsPage({ user }: PriceAlertsPageProps) {
           ? {
               ...setting,
               enabled: !setting.enabled,
+            }
+          : setting,
+      ),
+    );
+  }
+
+  function handleToggleMarkedForDelete(code: string) {
+    setFormSettings((prevSettings) =>
+      prevSettings.map((setting) =>
+        setting.code === code
+          ? {
+              ...setting,
+              markedForDelete: !setting.markedForDelete,
             }
           : setting,
       ),
@@ -96,17 +179,43 @@ export default function PriceAlertsPage({ user }: PriceAlertsPageProps) {
     );
   }
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    const enabledSettings = formSettings.filter((setting) => setting.enabled);
-
-    if (enabledSettings.length === 0) {
-      alert('알림을 설정할 가상화폐를 최소 1개 이상 선택해주세요.');
+  function handleResetToSavedSettings() {
+    if (!hasUnsavedChanges) {
       return;
     }
 
-    const requestBody = convertFormToRequest(formSettings);
+    const confirmed = window.confirm(
+      '저장하지 않은 변경사항을 처음 상태로 되돌릴까요?',
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setFormSettings(convertSettingsToForm(markets, savedSettings));
+    setSelectedMarketCodes(new Set());
+    setIsMarketModalOpen(false);
+  }
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (formSettings.length === 0) {
+      alert('가격 알림을 설정할 가상화폐를 추가해주세요.');
+      return;
+    }
+
+    const requestBody = convertFormToRequest(formSettings, savedSettings);
+
+    const hasChanges =
+      requestBody.creates.length > 0 ||
+      requestBody.updates.length > 0 ||
+      requestBody.deletes.length > 0;
+
+    if (!hasChanges) {
+      alert('변경된 가격 알림 설정이 없습니다.');
+      return;
+    }
 
     setIsSubmitting(true);
 
@@ -114,7 +223,7 @@ export default function PriceAlertsPage({ user }: PriceAlertsPageProps) {
       console.log('save price alert settings:', requestBody);
 
       /**
-       * 백엔드 컨트롤러 생기면 연결할 부분
+       * 백엔드 컨트롤러 연결 후 사용
        *
        * const response = await fetch('/price-alerts/me', {
        *   method: 'PUT',
@@ -128,6 +237,13 @@ export default function PriceAlertsPage({ user }: PriceAlertsPageProps) {
        *   throw new Error('Failed to save price alert settings');
        * }
        */
+
+      const nextSavedSettings = convertFormToSavedSettings(formSettings);
+
+      setSavedSettings(nextSavedSettings);
+      setFormSettings(convertSettingsToForm(markets, nextSavedSettings));
+      setSelectedMarketCodes(new Set());
+      setIsMarketModalOpen(false);
 
       alert('가격 알림 설정이 저장되었습니다.');
     } catch (error) {
@@ -155,66 +271,93 @@ export default function PriceAlertsPage({ user }: PriceAlertsPageProps) {
         <div>
           <h1>가격 알림 설정</h1>
           <p>
-            관심 있는 가상화폐를 선택하고, 가격 변화율 기준을 선택해보세요.
+            관심 있는 가상화폐를 추가하고, 가격 변화율 기준을 선택해보세요.
           </p>
         </div>
+
+        <button
+          type="button"
+          className="price-alert-add-button"
+          onClick={handleOpenMarketModal}
+          disabled={selectableMarkets.length === 0}
+        >
+          알림 추가
+        </button>
       </div>
 
       <form className="price-alerts-form" onSubmit={handleSubmit}>
-        <div className="price-alerts-list">
-          {formSettings.map((setting) => (
-            <article
-              key={setting.code}
-              className={`price-alert-card ${
-                setting.enabled ? 'enabled' : ''
-              }`}
-            >
-              <label className="price-alert-check-area">
-                <input
-                  type="checkbox"
-                  checked={setting.enabled}
-                  onChange={() => handleToggleEnabled(setting.code)}
-                />
+        {formSettings.length === 0 ? (
+          <div className="price-alerts-empty-card">
+            <h2>등록된 가격 알림이 없습니다.</h2>
+            <p>알림 추가 버튼을 눌러 관심 있는 가상화폐를 추가해주세요.</p>
+          </div>
+        ) : (
+          <div className="price-alerts-list">
+            {formSettings.map((setting) => (
+              <article
+                key={setting.code}
+                className={`price-alert-card ${
+                  setting.enabled ? 'enabled' : ''
+                } ${setting.markedForDelete ? 'marked-for-delete' : ''}`}
+              >
+                <label className="price-alert-check-area">
+                  <input
+                    type="checkbox"
+                    checked={setting.enabled}
+                    disabled={setting.markedForDelete}
+                    onChange={() => handleToggleEnabled(setting.code)}
+                  />
 
-                <span className="price-alert-check-label">알림 받기</span>
-              </label>
-
-              <div className="price-alert-coin-info">
-                <strong>{setting.koreanName}</strong>
-                <span>{setting.code}</span>
-              </div>
-
-              <div className="price-alert-rate-field">
-                <label htmlFor={`target-rate-${setting.code}`}>
-                  변화율 기준
+                  <span className="price-alert-check-label">알림 받기</span>
                 </label>
 
-                <div className="price-alert-select-wrapper">
-                  <select
-                    id={`target-rate-${setting.code}`}
-                    value={setting.targetChangeRatePercent}
-                    disabled={!setting.enabled}
-                    onChange={(event) =>
-                      handleChangeTargetRate(
-                        setting.code,
-                        event.target
-                          .value as PriceAlertTargetChangeRatePercent,
-                      )
-                    }
-                  >
-                    {PRICE_ALERT_TARGET_CHANGE_RATE_PERCENT_OPTIONS.map(
-                      (option) => (
-                        <option key={option} value={option}>
-                          {option}%
-                        </option>
-                      ),
-                    )}
-                  </select>
+                <div className="price-alert-coin-info">
+                  <strong>{setting.koreanName}</strong>
+                  <span>{setting.code}</span>
                 </div>
-              </div>
-            </article>
-          ))}
-        </div>
+
+                <div className="price-alert-rate-field">
+                  <label htmlFor={`target-rate-${setting.code}`}>
+                    변화율 기준
+                  </label>
+
+                  <div className="price-alert-select-wrapper">
+                    <select
+                      id={`target-rate-${setting.code}`}
+                      value={setting.targetChangeRatePercent}
+                      disabled={!setting.enabled || setting.markedForDelete}
+                      onChange={(event) =>
+                        handleChangeTargetRate(
+                          setting.code,
+                          event.target
+                            .value as PriceAlertTargetChangeRatePercent,
+                        )
+                      }
+                    >
+                      {PRICE_ALERT_TARGET_CHANGE_RATE_PERCENT_OPTIONS.map(
+                        (option) => (
+                          <option key={option} value={option}>
+                            {option}%
+                          </option>
+                        ),
+                      )}
+                    </select>
+                  </div>
+                </div>
+
+                <label className="price-alert-delete-area">
+                  <input
+                    type="checkbox"
+                    checked={setting.markedForDelete}
+                    onChange={() => handleToggleMarkedForDelete(setting.code)}
+                  />
+
+                  <span className="price-alert-delete-label">삭제</span>
+                </label>
+              </article>
+            ))}
+          </div>
+        )}
 
         <div className="price-alerts-submit-area">
           <p>
@@ -222,15 +365,97 @@ export default function PriceAlertsPage({ user }: PriceAlertsPageProps) {
             기준을 넘을 때 알림을 받을 수 있습니다.
           </p>
 
-          <button
-            type="submit"
-            className="price-alerts-submit-button"
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? '저장 중...' : '내 알람 설정하기'}
-          </button>
+          <div className="price-alerts-submit-buttons">
+            <button
+              type="button"
+              className="price-alerts-reset-button"
+              onClick={handleResetToSavedSettings}
+              disabled={isSubmitting || !hasUnsavedChanges}
+            >
+              처음상태
+            </button>
+
+            <button
+              type="submit"
+              className="price-alerts-submit-button"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? '저장 중...' : '내 알람 설정하기'}
+            </button>
+          </div>
         </div>
       </form>
+
+      {isMarketModalOpen && (
+        <div className="price-alert-modal-backdrop">
+          <div className="price-alert-modal" role="dialog" aria-modal="true">
+            <div className="price-alert-modal-header">
+              <div>
+                <h2>알림 추가</h2>
+                <p>알림을 받을 가상화폐를 선택해주세요.</p>
+              </div>
+
+              <button
+                type="button"
+                className="price-alert-modal-close-button"
+                onClick={handleCloseMarketModal}
+              >
+                닫기
+              </button>
+            </div>
+
+            {selectableMarkets.length === 0 ? (
+              <p className="price-alert-modal-empty">
+                추가할 수 있는 가상화폐가 없습니다.
+              </p>
+            ) : (
+              <>
+                <div className="price-alert-market-list">
+                  {selectableMarkets.map((market) => (
+                    <label
+                      key={market.code}
+                      className={`price-alert-market-item ${
+                        selectedMarketCodes.has(market.code) ? 'selected' : ''
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedMarketCodes.has(market.code)}
+                        onChange={() => handleToggleSelectedMarket(market.code)}
+                      />
+
+                      <span className="price-alert-market-item-text">
+                        <strong>{market.koreanName}</strong>
+                        <span>{market.code}</span>
+                      </span>
+                    </label>
+                  ))}
+                </div>
+
+                <div className="price-alert-modal-actions">
+                  <button
+                    type="button"
+                    className="price-alert-modal-reset-button"
+                    onClick={handleResetSelectedMarkets}
+                    disabled={selectedMarketCodes.size === 0}
+                  >
+                    초기화
+                  </button>
+
+                  <button
+                    type="button"
+                    className="price-alert-modal-add-button"
+                    onClick={handleAddSelectedMarkets}
+                    disabled={selectedMarketCodes.size === 0}
+                  >
+                    {selectedMarketCodes.size}개 추가
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </section>
   );
 }
