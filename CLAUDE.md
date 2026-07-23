@@ -1,0 +1,61 @@
+# CLAUDE.md
+
+이 파일은 모든 작업에 항상 필요한 짧은 공통 규칙만 담는다. 상세 규칙은 `.claude/rules/`, 사람이 읽는 설명은 `docs/`에 있다.
+
+## 프로젝트 개요
+React 19 · TypeScript · Vite 기반 SPA. `crypto-project` 백엔드(Spring Cloud MSA)의 프론트엔드로, 가상화폐 오픈채팅과 가격 알림을 제공한다. 모든 API/WebSocket 요청은 API Gateway 한 곳(`VITE_GATEWAY_URL`)으로 나간다.
+
+- 라우팅: `react-router-dom` v7 (`BrowserRouter`)
+- HTTP: `axios` (`src/apis/apiClient.ts`, access token/refresh 인터셉터)
+- 실시간: `@stomp/stompjs` + `sockjs-client` (`src/apis/stompClient.ts`)
+- 전역 상태: 라이브러리 없음. `App.tsx`의 `useState`(user, notifications)를 props로 하향 전달한다.
+
+문서 안내:
+- `docs/ARCHITECTURE.md` — 계층·의존 방향·통신·핵심 패턴
+- `docs/PAGES.md` — 카테고리별 화면 역할·기능·플로우(알림 포함)
+- `docs/UTILITIES.md` — `src/utils` 순수 함수/매퍼 레퍼런스
+- `docs/AUTH.md` — 인증 구현(토큰·인터셉터·OAuth2 흐름)
+- `docs/API_CONTRACT.md` — 백엔드 REST/STOMP 계약
+- `docs/MOCK_DATA.md` — 목/스텁 교체 대상(실연동 단계)
+
+> **현재 상태: 완성된 UI + 부분 목(mock) 상태.** 실제 백엔드 연동은 다음 단계다. 어디가 목이고 무엇을 갈아끼워야 하는지는 반드시 `docs/MOCK_DATA.md`를 먼저 확인한다. 이 목록을 모르고 코드를 고치면 "이미 연동된 것처럼 보이는데 실제로는 목"인 지점을 놓친다.
+
+## 명령어
+```bash
+npm run dev      # Vite 개발 서버
+npm run build    # tsc -b && vite build (타입 에러가 있으면 빌드 실패)
+npm run lint     # eslint
+npm run preview  # 빌드 결과 미리보기
+```
+검증은 `npm run build`(타입 체크 포함)와 `npm run lint`가 기본이다. 테스트 러너는 아직 없다.
+
+## 환경 변수
+- `VITE_GATEWAY_URL` (`.env`) — API Gateway 주소. 예: `https://localhost:8000`. 코드에서는 `src/constants/api.ts`의 `GATEWAY_URL`로만 접근한다.
+
+## 규칙 참조 (작업 유형별 — 필요 시 해당 파일을 읽는다)
+| 작업 | 읽을 규칙 |
+| --- | --- |
+| 컴포넌트/페이지/유틸 작성·수정, 네이밍, 파일 구조 | `.claude/rules/code-style.md` |
+| 목 데이터를 실제 API/STOMP로 교체, 신규 api 모듈 추가 | `.claude/rules/backend-integration.md` + `docs/MOCK_DATA.md` |
+
+## 작업 절차
+1. 관련 문서/규칙 확인 (`docs/`, `.claude/rules/`)
+2. 전체 호출 흐름 파악 — 페이지 → `apis/*` → 타입, 또는 STOMP 구독 경로
+3. 파일 경로 근거로 현재 동작 설명
+4. 최소 변경 계획 제시
+5. 필요한 파일만 수정
+6. `npm run build` + `npm run lint`로 검증
+7. 결과를 사실대로 보고
+
+## 의사소통
+- 한국어로 설명한다. `원인 → 수정 → 영향 범위 → 검증` 순서를 따른다.
+- 코드 설명 시 관련 파일 경로·함수명을 함께 제시한다(예: `src/pages/ChatRoomPage.tsx`의 `handleSubmit`).
+- 근거를 확인할 수 없는 내용은 추측하지 않고 `확인 필요`로 표시한다. 특히 백엔드 응답 형태는 `docs/API_CONTRACT.md`와 실제 백엔드(`../crypto-project-backend`)를 대조해 확인한다.
+
+## 코드 스타일 (요약 — 상세는 `.claude/rules/code-style.md`)
+- 함수 컴포넌트 + Hooks만 사용. 클래스 컴포넌트 없음.
+- import 경로는 `@/` alias(= `src/`)를 쓴다. 상대경로 `../..` 지양.
+- 타입은 `type`(interface 아님), 상수 유니온은 `as const` 배열 + 파생 타입.
+- API 호출은 페이지에서 직접 하지 않고 `src/apis/*` 모듈 함수를 통한다.
+- 서버 응답(`*Response`)과 화면 모델(`User`, `ChatMessage`, `*Form`)을 분리하고 `src/utils/*Mapper.ts`로 변환한다.
+- 대상 파일의 기존 스타일·구조를 우선한다.
