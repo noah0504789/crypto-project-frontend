@@ -2,72 +2,18 @@
 
 React SPA를 실제 API Gateway에 연동하기 위한 작업 목록. 근거는 **(a) React 이전 js+html 버전의 실동작 연동 코드**(커밋 `5603cb9`, 이후 `01d6f03`에서 삭제됨 → 이 파일이 유일 기록)와 **(b) 실제 백엔드 소스 확인 결과**(`../crypto-project-backend`)다.
 
-> **이 파일만 보고 작업 가능하도록** 각 항목에 정정값·근거 파일·구현 절차·필요한 레거시 코드를 인라인했다. 레거시 코드를 다시 열지 않아도 된다.
+> **이 파일만 보고 작업 가능하도록** 각 항목에 근거 파일·구현 절차·필요한 레거시 코드를 인라인했다. 레거시 코드를 다시 열지 않아도 된다.
 > 현재 React는 **UI 완성 + 부분 목(mock)** 상태다. 목 교체 대상은 `docs/MOCK_DATA.md`, 규칙은 `.claude/rules/backend-integration.md`.
+> **통신 계약(REST/STOMP 경로·payload·status·인증)의 정본은 `docs/API_CONTRACT.md`**다. 아래 태스크의 엔드포인트/destination/payload 값은 그 문서를 기준으로 삼는다.
 
 ---
 
-## 0. 공통 계약 (모든 항목의 전제 · 백엔드 확인 완료)
+## 0~1. 통신 계약 (→ `docs/API_CONTRACT.md`로 이관 완료)
 
-- **단일 게이트웨이**: 모든 REST/WS는 `GATEWAY_URL`(`src/constants/api.ts` = `VITE_GATEWAY_URL`)로 나간다.
-- **HTTP**: `apiClient`(`src/apis/apiClient.ts`, `withCredentials: true`). refresh 토큰은 httpOnly 쿠키(백엔드 Set-Cookie), access 토큰은 `sessionStorage`(`src/utils/authStorage.ts`).
-- **STOMP prefix(백엔드 `websocket-gateway.yml` + `StompConfig.java`)**: 앱(전송) `/msg`, user `/user`, 브로커(구독) `/topic`·`/queue`. 엔드포인트 `/ws`(SockJS)·`/ws-native`(native) 둘 다 등록. **핸드셰이크 인증 = URL 쿼리 `?access_token=`**(gateway `WebsocketHandshakeAuthWebFilter`, 없으면 401).
-- **커서 페이지네이션**: 응답 `{ items, hasNext }`. 다음 페이지는 마지막 항목 커서로 요청.
-- **검증 에러**: 실패 응답 `response.data.errors = [{ field, message, code? }]`.
-- **REST 엔드포인트 카탈로그**(모두 `GATEWAY_URL` prefix, `apiClient`):
+공통 계약(단일 게이트웨이·토큰 저장·STOMP prefix·커서 페이지네이션·검증 에러), REST 엔드포인트 카탈로그, 그리고 React↔백엔드 정정 8건(STOMP 발행 `/msg/chat.send`, 방 구독 `/topic/chat/{roomId}`, 배지 `/user/queue/chat/badge`, 재발급 `/auth/refresh`+`Authorization` 헤더, 방 나가기 `DELETE .../members`, 방 수정 `PATCH`, 핸드셰이크 `?access_token=` 등)은 **모두 백엔드 소스로 확인·정정 완료**되어 `docs/API_CONTRACT.md`(§0~§3)로 옮겼다. 근거 파일 경로도 그 문서에 인라인돼 있다.
 
-  | 기능 | Method · Path | params / body | 성공 status |
-  |---|---|---|---|
-  | 인기 채팅방 | `GET /chat/rooms/popular` | `limit, category, lastId, lastPopularity` | 2xx |
-  | 내 채팅방 목록 | `GET /chat/rooms/me` | `limit, lastUnreadFlag, lastMsgCreatedAt, lastId` | 2xx |
-  | 내 채팅방 단건 | `GET /chat/room/{roomId}/me` | — | 2xx |
-  | 방 상세 | `GET /chat/room/{roomId}` | — | 200 |
-  | 방 메시지 | `GET /chat/room/{roomId}/messages` | `limit, lastId, lastCreatedAtMillis` | 2xx |
-  | 방 생성 | `POST /chat/room` | `{title, description, category}` | 201 |
-  | 방 수정 | `PATCH /chat/room/{roomId}` | 변경 필드만 `{title?, description?, category?}` | 204 |
-  | 방 입장(가입) | `POST /chat/room/{roomId}/members` | — | 201·204 |
-  | 방 나가기 | `DELETE /chat/room/{roomId}/members` | — | 204 |
-  | 활동 보고 | `PUT /chat/room/{roomId}/activity` | `lastMsgSeq, lastMsgMs` | — |
-  | 내 프로필 | `GET /user/me` | — | 200·304 |
-  | 타 유저 프로필 | `GET /user/{userId}/profile` | — | 2xx |
-  | 토큰 재발급 | `POST /auth/refresh` | 빈 body, 쿠키 | 201 + `Authorization` 헤더 |
-  | 로그아웃 | `POST /auth/logout` | Bearer | 2xx |
-
----
-
-## 1. 통신 계약 정정 (확정 — 백엔드 소스 확인 완료)
-
-React 상수/경로가 백엔드와 어긋난 8건. **레거시 값이 정답**임을 백엔드 소스로 확인했다. 값만 바꾸면 되는 확정 작업.
-
-- [x] **1.1 STOMP 전송 목적지** — `src/apis/chatStompApi.ts`
-  - `CHAT_MESSAGE_SEND_DESTINATION`: `/app/chat.send` → **`/msg/chat.send`**
-  - 근거: `websocket-gateway/.../StompConfig.java`(`setApplicationDestinationPrefixes`) + `git-config-repo/dynamic/websocket-gateway.yml`(`application-destination-prefix: /msg`) + `StompController.java`(`@MessageMapping("/chat.send")`).
-
-- [x] **1.2 방 브로드캐스트 구독** — `src/apis/chatStompApi.ts`
-  - `subscribeChatRoomMessages`: `/topic/chat/rooms/${roomId}` → **`/topic/chat/${roomId}`**
-  - 근거: `common/common-core/.../StompDestination.java` → `CHAT_ROOM_PREFIX("/topic/chat/")`.
-
-- [x] **1.3 배지 구독** — `src/apis/chatStompApi.ts`
-  - `MY_CHAT_ROOM_BADGE_DESTINATION`: `/user/queue/my-chat-room-badge` → **`/user/queue/chat/badge`**
-  - 근거: `StompDestination` → `CHAT_ROOM_BADGE_QUEUE("/queue/chat/badge")` + user prefix `/user`.
-
-- [x] **1.4 ACK 구독** — 이미 `/user/queue/chat/ack` (일치 ✓, 변경 없음). 근거: `StompDestination.CHAT_ACK_QUEUE` + `@SendToUser("/queue/chat/ack")`.
-
-- [x] **1.5 토큰 재발급** — `src/apis/apiClient.ts`
-  - 경로 `/auth/reissue` → **`/auth/refresh`**.
-  - 응답 파싱: body `{accessToken}` → **응답 `Authorization` 헤더**에서 `Bearer ` 제거 후 추출(성공 status 201).
-  - 근거: `oauth2-client/.../web/AuthController.java` — `@PostMapping("${api-path.auth.refresh:/auth/refresh}")`, `ResponseEntity.status(CREATED).header(AUTHORIZATION, "Bearer "+token).header(SET_COOKIE, ...)`, `Access-Control-Expose-Headers: Authorization`.
-  - 참고 파싱: `const h = res.headers['authorization']; const token = h?.startsWith('Bearer ') ? h.slice(7) : null;`
-
-- [x] **1.6 방 나가기** — `src/apis/chatRoomApi.ts` `leaveChatRoom`
-  - `DELETE /chat/room/${roomId}/members/me` → **`DELETE /chat/room/${roomId}/members`** (204)
-  - 근거: `chat/.../web/ChatRoomController.java` `@DeleteMapping("${api-path.chat.room-members:/room/{roomId}/members}")`.
-
-- [x] **1.7 방 수정** — `src/apis/chatRoomApi.ts` `updateChatRoom`
-  - `PUT /chat/room/${roomId}` → **`PATCH /chat/room/${roomId}`** (부분 업데이트 바디, 204). 변경된 필드만 담아 보낸다.
-  - 근거: `ChatRoomController.java` `@PatchMapping("${api-path.chat.room:/room/{roomId}}")`.
-
-- [x] **1.8 STOMP 핸드셰이크 인증** — `src/apis/stompClient.ts`: 토큰을 `connectHeaders`가 아니라 SockJS URL 쿼리 `?access_token=`로 전달(팩토리 내부에서 매 연결 시 최신 토큰). 완료.
+- **정정 8건은 이미 코드 반영 완료([x])** — 값 자체는 `docs/API_CONTRACT.md` 카탈로그/STOMP 표를 참조.
+- 이 파일 §2~4의 태스크는 그 계약을 전제로 한 **이식 절차·레거시 코드**만 남긴다.
 
 ---
 
@@ -77,7 +23,7 @@ React 상수/경로가 백엔드와 어긋난 8건. **레거시 값이 정답**�
   - **배관 완료**: single-flight(`refreshAccessTokenOnce`)·원요청 재시도·실패 시 `removeAccessToken` + `saveRedirectAfterLogin`(현재 경로 저장).
   - **보류(페이지)**: 이 앱은 `/login` 라우트가 없고 로그인이 **모달**(`App.tsx`/`Header`)이라, 실패 후 실제 로그인 유도(모달 열기/`setUser(null)`)는 §2.2·§2.4 페이지 작업에서 연결.
   - 401 → refresh 1회(single-flight, `_retry`) → 원요청 재시도. refresh 경로 자체 401/재시도 초과 → 토큰 제거 + 돌아올 URL 저장 + 로그인 페이지.
-  - 현재 React는 refresh를 하긴 하나 경로/응답(§1.5)이 틀렸고 single-flight·redirect 처리가 없다.
+  - refresh 경로/응답 계약은 API_CONTRACT §2(정정 완료). 남은 건 single-flight·redirect 처리.
   - 레거시 참고(`auth-api.js`):
     ```js
     let refreshPromise = null, isRedirectingLogin = false;
@@ -111,7 +57,7 @@ React 상수/경로가 백엔드와 어긋난 8건. **레거시 값이 정답**�
     ```
 
 - [ ] **2.2 로그인 성공 토큰 수신** — `src/pages/LoginSuccessPage.tsx`
-  - 로그인 성공 시 백엔드가 SPA로 `?accessToken=`(URL 쿼리)로 access 토큰을 넘긴다. 이를 파싱→저장→저장해둔 redirect로 복귀.
+  - 로그인 성공 리다이렉트로 넘어온 `?accessToken=`(URL 쿼리, 계약: API_CONTRACT §2 인증)을 파싱→저장→저장해둔 redirect로 복귀.
   - 레거시 참고(`login-success.js`):
     ```js
     const params = new URLSearchParams(window.location.search);
@@ -124,8 +70,9 @@ React 상수/경로가 백엔드와 어긋난 8건. **레거시 값이 정답**�
     ```
 
 - [ ] **2.3 로그인 시작 / 로그아웃** — `src/apis/authApi.ts`
-  - 시작: `getOAuthLoginUrl(provider)` = `${GATEWAY_URL}/oauth2/authorization/{google|kakao}` (이미 존재 ✓). 버튼에서 `window.location.href`로 이동.
-  - 로그아웃: `POST /auth/logout`(Bearer) → 토큰 제거 → 로그인 페이지 (이미 `logout()` 존재, 후처리 연결 확인).
+  - 시작: `getOAuthLoginUrl(provider)`(이미 존재 ✓) URL로 버튼에서 `window.location.href` 이동.
+  - 로그아웃: `logout()`(이미 존재) → 토큰 제거 → 로그인 페이지 후처리 연결 확인.
+  - 경로 계약(`/oauth2/authorization/{google|kakao}`, `POST /auth/logout`)은 API_CONTRACT §2 인증.
 
 - [ ] **2.4 앱 초기 사용자 로딩** — `src/App.tsx`
   - 초기 `user`를 `null`로 두고, 토큰 있으면 `getMyProfile()`(`GET /user/me`)로 채운다. (backend-integration.md 지적: 안 하면 모든 화면이 "로그인됨"으로 보임.)
@@ -169,7 +116,7 @@ React 상수/경로가 백엔드와 어긋난 8건. **레거시 값이 정답**�
       body: JSON.stringify({ clientMessageId, roomId, writerId: myId, content }) });
     ```
 
-- [ ] **4.2 ACK 처리** — 구독 `/user/queue/chat/ack`, payload `{ id, clientMessageId, success, ts, errors }`
+- [ ] **4.2 ACK 처리** — 구독 destination·payload 계약은 API_CONTRACT §3. 처리 로직:
     ```js
     function onAck({ id, clientMessageId, success, ts, errors }) {
       const e = pending.get(clientMessageId); if (!e) return;
@@ -190,9 +137,9 @@ React 상수/경로가 백엔드와 어긋난 8건. **레거시 값이 정답**�
         body: JSON.stringify({ clientMessageId: id, roomId, writerId: myId, content: e.content }) }); }
     ```
 
-- [ ] **4.4 브로드캐스트 수신 + 중복 제거** — 구독 `/topic/chat/${roomId}`. 내가 보낸 것은 `mySent`로 스킵.
+- [ ] **4.4 브로드캐스트 수신 + 중복 제거** — 구독 destination·flat payload 계약은 API_CONTRACT §3. 수신 타입/매퍼는 flat로 **정정 완료**(`types/chatMessage.ts`·`chatMessageUtils.ts`), 남은 건 페이지 수신 핸들러. 내가 보낸 것은 `mySent`로 스킵.
     ```js
-    function onBroadcast(message) {
+    function onBroadcast(message) {   // message: flat payload(messageId/timestamp)
       if (mySent.has(message.clientMessageId)) { mySent.delete(message.clientMessageId); return; }
       const distFromBottom = chatBox.scrollHeight - (chatBox.scrollTop + chatBox.clientHeight);
       appendMessage(message); lastMsgSeq++;
@@ -202,21 +149,21 @@ React 상수/경로가 백엔드와 어긋난 8건. **레거시 값이 정답**�
 
 - [ ] **4.5 초기 로딩 순서** — `loadMyProfile()`(myId) → `GET /chat/room/{roomId}`(`room.msgCnt`→`lastMsgSeq`) → `GET /chat/room/{roomId}/messages`(최신) → 렌더 후 최하단 스크롤.
 
-- [ ] **4.6 이전 메시지 커서 로딩 + 스크롤 보정** — scrollTop 0에서 `GET .../messages?limit&lastId&lastCreatedAtMillis`(첫 항목 커서), prepend 후 스크롤 위치 보존.
+- [ ] **4.6 이전 메시지 커서 로딩 + 스크롤 보정** — scrollTop 0에서 이전 메시지 조회(엔드포인트·커서 params 계약은 API_CONTRACT §2 채팅 메시지, 첫 항목 커서), prepend 후 스크롤 위치 보존.
     ```js
     const prevScrollHeight = chatBox.scrollHeight, prevScrollTop = chatBox.scrollTop;
     items.forEach(prependMessage);
     chatBox.scrollTop = chatBox.scrollHeight - prevScrollHeight + prevScrollTop;
     ```
 
-- [ ] **4.7 활동/읽음 보고** — `beforeunload`에서 `PUT /chat/room/{roomId}/activity?lastMsgSeq=..&lastMsgMs=..`. 언로드 유실 방지 위해 `fetch(keepalive:true)` + `Authorization` 헤더 수동.
+- [ ] **4.7 활동/읽음 보고** — `beforeunload`에서 활동 보고(엔드포인트·params 계약은 API_CONTRACT §2 채팅방). 언로드 유실 방지 위해 `fetch(keepalive:true)` + `Authorization` 헤더 수동.
     ```js
     fetch(`${GATEWAY_URL}/chat/room/${roomId}/activity?lastMsgSeq=${lastMsgSeq}&lastMsgMs=${lastTs ?? 0}`,
       { method: 'PUT', headers: { authorization: `Bearer ${getAccessToken()}` }, keepalive: true }).catch(()=>{});
     ```
 
 - [~] **4.8 타 유저 프로필 캐시** — 아바타 닉네임용 `GET /user/{userId}/profile`을 캐시 + in-flight dedup.
-  - **배관 완료**: `userApi.ts`에 `getUserProfile(userId)` 추가(모듈 캐시 `Map` + in-flight dedup). 백엔드 확인: `/user/{publicId}/profile` 응답은 `/user/me`와 동일한 `UserResponse` → `mapUserResponseToUser`로 매핑.
+  - **배관 완료**: `userApi.ts`에 `getUserProfile(userId)` 추가(모듈 캐시 `Map` + in-flight dedup). 응답 계약(`/user/{userId}/profile` = `UserResponse` → `mapUserResponseToUser`)은 API_CONTRACT §2 사용자.
   - **보류(페이지)**: `ChatRoomPage`에서 `createAvatarEl` 대체로 호출 연결은 §4 채팅 연동 시.
     ```js
     const profileCache = new Map(), inFlight = new Map();
@@ -229,7 +176,7 @@ React 상수/경로가 백엔드와 어긋난 8건. **레거시 값이 정답**�
     }
     ```
 
-- [ ] **4.9 내 채팅방 목록 배지** — `MyChatRoomPage`에서 구독 `/user/queue/chat/badge` payload `{ id, lastMsgContent, lastMsgCreatedAt }` → 해당 방 카드 맨 앞으로 이동 + 마지막 메시지/안읽음 갱신(레거시 `onBadge`). 방이 목록에 없으면 `GET /chat/room/{id}/me`로 만들어 prepend.
+- [ ] **4.9 내 채팅방 목록 배지** — `MyChatRoomPage`에서 배지 구독(destination·payload 계약은 API_CONTRACT §3) → 해당 방 카드 맨 앞으로 이동 + 마지막 메시지/안읽음 갱신(레거시 `onBadge`). 방이 목록에 없으면 내 채팅방 단건 조회로 만들어 prepend.
 
 ---
 
