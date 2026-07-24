@@ -17,6 +17,7 @@ React 19 · TypeScript · Vite 기반 SPA. `crypto-project` 백엔드(Spring Clo
 - `docs/AUTH.md` — 인증 구현(토큰·인터셉터·OAuth2 흐름)
 - `docs/API_CONTRACT.md` — 백엔드 REST/STOMP 계약
 - `docs/MOCK_DATA.md` — 목/스텁 교체 대상(실연동 단계)
+- `TODO.md` — 백엔드 실연동 작업 목록(레거시 실동작 코드 + 백엔드 확인 근거·정정값 포함, 항목별 자체 완결)
 
 > **현재 상태: 완성된 UI + 부분 목(mock) 상태.** 실제 백엔드 연동은 다음 단계다. 어디가 목이고 무엇을 갈아끼워야 하는지는 반드시 `docs/MOCK_DATA.md`를 먼저 확인한다. 이 목록을 모르고 코드를 고치면 "이미 연동된 것처럼 보이는데 실제로는 목"인 지점을 놓친다.
 
