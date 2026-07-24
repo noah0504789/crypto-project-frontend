@@ -67,13 +67,15 @@ React 상수/경로가 백엔드와 어긋난 8건. **레거시 값이 정답**�
   - `PUT /chat/room/${roomId}` → **`PATCH /chat/room/${roomId}`** (부분 업데이트 바디, 204). 변경된 필드만 담아 보낸다.
   - 근거: `ChatRoomController.java` `@PatchMapping("${api-path.chat.room:/room/{roomId}}")`.
 
-- [ ] **1.8 STOMP 핸드셰이크 인증** — `src/apis/stompClient.ts` → §3.1에서 함께 처리(토큰을 `connectHeaders`가 아니라 SockJS URL 쿼리로).
+- [x] **1.8 STOMP 핸드셰이크 인증** — `src/apis/stompClient.ts`: 토큰을 `connectHeaders`가 아니라 SockJS URL 쿼리 `?access_token=`로 전달(팩토리 내부에서 매 연결 시 최신 토큰). 완료.
 
 ---
 
 ## 2. 인증 흐름 이식
 
-- [ ] **2.1 401 single-flight refresh + 재시도 + 로그인 리다이렉트** — `src/apis/apiClient.ts`
+- [~] **2.1 401 single-flight refresh + 재시도 + 로그인 리다이렉트** — `src/apis/apiClient.ts`
+  - **배관 완료**: single-flight(`refreshAccessTokenOnce`)·원요청 재시도·실패 시 `removeAccessToken` + `saveRedirectAfterLogin`(현재 경로 저장).
+  - **보류(페이지)**: 이 앱은 `/login` 라우트가 없고 로그인이 **모달**(`App.tsx`/`Header`)이라, 실패 후 실제 로그인 유도(모달 열기/`setUser(null)`)는 §2.2·§2.4 페이지 작업에서 연결.
   - 401 → refresh 1회(single-flight, `_retry`) → 원요청 재시도. refresh 경로 자체 401/재시도 초과 → 토큰 제거 + 돌아올 URL 저장 + 로그인 페이지.
   - 현재 React는 refresh를 하긴 하나 경로/응답(§1.5)이 틀렸고 single-flight·redirect 처리가 없다.
   - 레거시 참고(`auth-api.js`):
@@ -132,7 +134,9 @@ React 상수/경로가 백엔드와 어긋난 8건. **레거시 값이 정답**�
 
 ## 3. STOMP 연결 이식
 
-- [ ] **3.1 핸드셰이크 토큰 = URL 쿼리 + 재연결 재구독** — `src/apis/stompClient.ts`
+- [~] **3.1 핸드셰이크 토큰 = URL 쿼리 + 재연결 재구독** — `src/apis/stompClient.ts`
+  - **배관 완료**: 토큰을 `connectHeaders`→**SockJS URL 쿼리 `?access_token=`**로 변경(팩토리 내부에서 매 연결 최신 토큰). `StompHeaders` import 제거.
+  - **보류(페이지/구조)**: 재연결 시 재구독을 레거시식 싱글턴+topic맵으로 갈지, 페이지 `useEffect` 재실행에 맡길지는 페이지 구조와 얽혀 결정 필요.
   - 토큰을 STOMP `connectHeaders`가 아니라 **핸드셰이크 URL 쿼리 `?access_token=`**로 넘긴다. SockJS 사용 시: `new SockJS(GATEWAY_URL + '/ws?access_token=' + getAccessToken())`. (native 원하면 `new WebSocket(GATEWAY_URL.replace(/^http/,'ws') + '/ws-native?access_token=' + token)`.)
   - 재연결 시 기존 구독을 다시 걸어야 한다. 레거시는 topic→handler 맵을 두고 `onConnect`에서 재구독하는 싱글턴을 썼다. React는 페이지 `useEffect`에서 `createStompClient()`→`activate()`, cleanup에서 `deactivate()` 패턴(코드 스타일 규칙)이므로, **재구독은 각 페이지 effect가 재실행되며 처리**하거나 레거시식 싱글턴+topic맵을 도입할지 결정.
   - 레거시 참고(`stomp-client.js`, 재구독 핵심):
@@ -211,7 +215,9 @@ React 상수/경로가 백엔드와 어긋난 8건. **레거시 값이 정답**�
       { method: 'PUT', headers: { authorization: `Bearer ${getAccessToken()}` }, keepalive: true }).catch(()=>{});
     ```
 
-- [ ] **4.8 타 유저 프로필 캐시** — 아바타 닉네임용 `GET /user/{userId}/profile`을 캐시 + in-flight dedup. 현재 `userApi.ts`엔 없음 → 추가.
+- [~] **4.8 타 유저 프로필 캐시** — 아바타 닉네임용 `GET /user/{userId}/profile`을 캐시 + in-flight dedup.
+  - **배관 완료**: `userApi.ts`에 `getUserProfile(userId)` 추가(모듈 캐시 `Map` + in-flight dedup). 백엔드 확인: `/user/{publicId}/profile` 응답은 `/user/me`와 동일한 `UserResponse` → `mapUserResponseToUser`로 매핑.
+  - **보류(페이지)**: `ChatRoomPage`에서 `createAvatarEl` 대체로 호출 연결은 §4 채팅 연동 시.
     ```js
     const profileCache = new Map(), inFlight = new Map();
     function ensureProfile(userId) {
