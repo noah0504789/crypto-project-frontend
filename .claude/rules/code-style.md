@@ -16,7 +16,7 @@
 - 절대경로 alias `@/`(= `src/`)를 쓴다. `import { apiClient } from '@/apis/apiClient'`. 상대경로는 같은 폴더의 CSS(`import './Xxx.css'`) 정도에만.
 
 ## 컴포넌트
-- 함수 컴포넌트 + Hooks. `export default function Name(...)`.
+- 함수 컴포넌트 + Hooks만 사용한다. **클래스 컴포넌트는 쓰지 않는다.** `export default function Name(...)`.
 - 파일 구조: 재사용 컴포넌트는 `components/Xxx/Xxx.tsx` + `Xxx.css`. **페이지도 디렉토리 단위**로 `pages/XxxPage/XxxPage.tsx` + (있으면) `XxxPage.css`. CSS는 같은 폴더 상대 import(`import './XxxPage.css'`).
 - 이벤트 핸들러는 `handleXxx`, 콜백 props는 `onXxx`.
 - 로딩 버튼은 공용 `LoadingButton`(`isLoading`, `loadingText`) 사용.
@@ -30,6 +30,14 @@
 - 컴포넌트에서 `axios`/`fetch`를 직접 호출하지 않는다. `src/apis/*`의 함수를 통한다.
 - 새 도메인 API는 `src/apis/{domain}Api.ts` 파일로 만들고 `apiClient`를 쓴다(토큰/재발급 인터셉터가 붙음).
 - 서버 요청/응답 타입은 `src/types/`에 두고, 화면 모델과 다르면 `src/utils/{domain}Mapper.ts`로 변환.
+
+## 서버 타입 ↔ 화면 모델 분리
+- **서버 계약 타입**(`*Response`·`*Event`·`*Request`)과 **화면 모델**(`User`·`ChatMessage`·`*Form` 등)을 별개 타입으로 유지한다. 컴포넌트/페이지는 화면 모델만 다루고, 서버 타입은 `apis/*`·`utils/*Mapper.ts` 경계 안에서만 쓴다.
+- 서버 타입은 `src/types/{domain}.ts`, 변환은 `src/utils/{domain}Mapper.ts`의 순수 함수로 둔다. 필드명·타입·형식 차이(예: epoch millis ↔ ISO 문자열, 문자열 ↔ 숫자)는 **매퍼에서 흡수**하고, 화면 모델을 백엔드 형태에 끌려가게 두지 않는다.
+- 예시:
+  - `ChatMessageResponseItem`(서버) → `mapChatMessageResponseItemToChatMessage` → `ChatMessage`(화면).
+  - 브로드캐스트 flat payload(`{ messageId, timestamp, ... }`) → `mapBroadcastEventToChatMessage`(`timestamp` epoch millis → `createdAt` ISO 문자열).
+- 백엔드 실제 응답 형태는 추측하지 말고 `docs/API_CONTRACT.md`(및 실제 백엔드 `../crypto-project-backend`)와 대조해 매퍼를 맞춘다.
 
 ## 네이밍
 - 서버 응답 타입: `XxxResponse`, 서버 이벤트: `XxxEvent`, 화면 폼 모델: `XxxForm`.

@@ -53,10 +53,5 @@ npm run preview  # 빌드 결과 미리보기
 - 코드 설명 시 관련 파일 경로·함수명을 함께 제시한다(예: `src/pages/ChatRoomPage.tsx`의 `handleSubmit`).
 - 근거를 확인할 수 없는 내용은 추측하지 않고 `확인 필요`로 표시한다. 특히 백엔드 응답 형태는 `docs/API_CONTRACT.md`와 실제 백엔드(`../crypto-project-backend`)를 대조해 확인한다.
 
-## 코드 스타일 (요약 — 상세는 `.claude/rules/code-style.md`)
-- 함수 컴포넌트 + Hooks만 사용. 클래스 컴포넌트 없음.
-- import 경로는 `@/` alias(= `src/`)를 쓴다. 상대경로 `../..` 지양.
-- 타입은 `type`(interface 아님), 상수 유니온은 `as const` 배열 + 파생 타입.
-- API 호출은 페이지에서 직접 하지 않고 `src/apis/*` 모듈 함수를 통한다.
-- 서버 응답(`*Response`)과 화면 모델(`User`, `ChatMessage`, `*Form`)을 분리하고 `src/utils/*Mapper.ts`로 변환한다.
-- 대상 파일의 기존 스타일·구조를 우선한다.
+## 코드 스타일
+컴포넌트·타입·import·네이밍·파일 구조·모델 분리 등 코드 스타일 규칙은 **`.claude/rules/code-style.md`**를 따른다(컴포넌트/페이지/유틸 작성·수정 시 반드시 참조).
