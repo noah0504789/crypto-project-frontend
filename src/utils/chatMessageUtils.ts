@@ -55,12 +55,14 @@ export function mapBroadcastEventToChatMessage({
   fallbackWriterName: string;
 }): ChatMessage {
   return {
-    id: Number(event.payload.id),
-    roomId: Number(event.payload.roomId),
-    writerId: String(event.payload.writerId),
+    id: Number(event.messageId),
+    roomId: Number(event.roomId),
+    writerId: String(event.writerId),
     writerName: fallbackWriterName,
-    content: event.payload.content,
-    createdAt: event.payload.createdAt,
+    content: event.content,
+    createdAt: event.timestamp
+      ? new Date(event.timestamp).toISOString()
+      : new Date().toISOString(),
     status: 'sent',
     clientMessageId: event.clientMessageId,
   };

@@ -37,17 +37,14 @@ export type ChatMessageRequest = {
   clientMessageId: string;
 };
 
-export type ChatMessageBroadcastPayload = {
-  id: string;
+// 백엔드가 /topic/chat/{roomId}로 보내는 flat wire payload(StompChatMessagePayload).
+// timestamp는 epoch millis(숫자), 시간 없음이면 0.
+export type ChatMessageBroadcastEvent = {
+  messageId: string;
   roomId: string;
   writerId: string;
   content: string;
-  createdAt: string;
-};
-
-export type ChatMessageBroadcastEvent = {
-  payload: ChatMessageBroadcastPayload;
-  memberIds: string[];
+  timestamp: number;
   clientMessageId: string;
 };
 
