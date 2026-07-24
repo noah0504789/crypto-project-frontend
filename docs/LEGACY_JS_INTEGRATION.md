@@ -97,36 +97,38 @@
 - **커서 페이지네이션**: 응답 `{ items, hasNext }`. 다음 페이지는 마지막 항목의 커서 필드(`lastId` + 도메인별 보조 커서: popular=`lastPopularity`, my=`lastUnreadFlag`+`lastMsgCreatedAt`, messages=`lastCreatedAtMillis`)로 요청.
 - **필드 검증 에러**: 실패 응답 body `{ errors: [{ field, message, code? }] }`. 폼에서 필드별로 표시(`room-form.js`의 `bindFieldErrors`).
 
-## 8. 현재 React 코드와의 차이 (중요 — 붙이기 전 확인)
+## 8. 현재 React 코드와의 차이 + 백엔드 확인 결과 (중요)
 
-아래는 **레거시(당시 실동작)** ↔ **현재 React**를 직접 대조한 결과다. 여러 값이 어긋나 있어, 지금 React를 그대로 붙이면 통신이 실패할 수 있다. 특히 STOMP 목적지와 토큰 재발급은 **백엔드 계약(external-contracts) 기준으로 레거시가 맞고 React가 어긋난 것으로 보인다**.
+**실제 백엔드(`../crypto-project-backend`) 소스를 직접 확인한 결과, 불일치 8건 모두 레거시 값이 백엔드와 일치했고 React 값이 틀렸다**(게이트웨이 URL 제외). 아래 "백엔드 실제"가 정답이며 React를 이 값으로 맞춰야 한다.
 
-| 항목 | 레거시 (실동작) | 현재 React | 비고 |
+| 항목 | 현재 React (틀림) | 백엔드 실제 = 정답 | 근거(백엔드) |
 |---|---|---|---|
-| 토큰 재발급 | `POST /auth/refresh`, 새 토큰 = **응답 `Authorization` 헤더**, 201 | `apiClient.ts`: `POST /auth/reissue`, 토큰 = **body `{accessToken}`** | 백엔드는 `/auth/refresh` + Authorization 헤더(oauth2-client §6.2). **React 재확인 필요** |
-| STOMP 핸드셰이크 인증 | 토큰 = 핸드셰이크 URL **쿼리 `?access_token=`** | `stompClient.ts`: SockJS `/ws` + **`connectHeaders.Authorization`** | 게이트웨이는 쿼리에서 인증. **React 방식 미동작 가능** |
-| 메시지 전송 목적지 | `/msg/chat.send` | `chatStompApi.ts`: `/app/chat.send` | 백엔드 계약 `/msg/chat.send`. **React 어긋남** |
-| 방 브로드캐스트 구독 | `/topic/chat/{roomId}` | `/topic/chat/rooms/{roomId}` | 백엔드 `/topic/chat/{roomId}`. **React 어긋남** |
-| 배지 구독 | `/user/queue/chat/badge` | `/user/queue/my-chat-room-badge` | 백엔드 `/queue/chat/badge`. **React 어긋남** |
-| ACK 구독 | `/user/queue/chat/ack` | `/user/queue/chat/ack` | 일치 ✓ |
-| 방 나가기 | `DELETE /chat/room/{roomId}/members` | `DELETE /chat/room/{roomId}/members/me` | 경로 차이 — 재확인 |
-| 방 수정 | `PATCH /chat/room/{roomId}` (부분) | `PUT /chat/room/{roomId}` | 메서드 차이 — 재확인 |
-| 게이트웨이 URL | 하드코딩 `https://localhost:8000` | `.env` `VITE_GATEWAY_URL` | React가 개선 ✓ |
+| 토큰 재발급 | `POST /auth/reissue`, 토큰 = body `{accessToken}` | `POST /auth/refresh` → **201 + `Authorization: Bearer` 헤더**(refresh는 Set-Cookie) | `oauth2-client/.../web/AuthController.java` (`@PostMapping /auth/refresh`, `status(CREATED).header(AUTHORIZATION, ...)`) |
+| STOMP 핸드셰이크 인증 | SockJS `/ws` + STOMP `connectHeaders.Authorization` | 핸드셰이크 URL **쿼리 `?access_token=`** | gateway `WebsocketHandshakeAuthWebFilter`(테스트: "`/ws` 경로는 access_token 인증 대상", 없으면 401) |
+| 메시지 전송 목적지 | `/app/chat.send` | **`/msg/chat.send`** (app prefix `/msg` + `@MessageMapping("/chat.send")`) | `websocket-gateway/.../StompConfig.java` + `git-config-repo/dynamic/websocket-gateway.yml`(`application-destination-prefix: /msg`) |
+| 방 브로드캐스트 구독 | `/topic/chat/rooms/{roomId}` | **`/topic/chat/{roomId}`** | `common-core/.../StompDestination.java`(`CHAT_ROOM_PREFIX="/topic/chat/"`) |
+| 배지 구독 | `/user/queue/my-chat-room-badge` | **`/user/queue/chat/badge`** (user prefix `/user` + `/queue/chat/badge`) | `StompDestination`(`CHAT_ROOM_BADGE_QUEUE="/queue/chat/badge"`), `user-destination-prefix: /user` |
+| ACK 구독 | `/user/queue/chat/ack` | `/user/queue/chat/ack` (일치 ✓) | `StompDestination`(`CHAT_ACK_QUEUE`), `@SendToUser("/queue/chat/ack")` |
+| 방 나가기 | `DELETE /chat/room/{roomId}/members/me` | **`DELETE /chat/room/{roomId}/members`** | `chat/.../web/ChatRoomController.java`(`@DeleteMapping /room/{roomId}/members`) |
+| 방 수정 | `PUT /chat/room/{roomId}` | **`PATCH /chat/room/{roomId}`** (부분 업데이트) | `ChatRoomController`(`@PatchMapping /room/{roomId}`) |
+| 게이트웨이 URL | `.env` `VITE_GATEWAY_URL` | (React가 개선 ✓ — 레거시는 하드코딩) | — |
 
-> 위 STOMP 목적지 4종·`/auth/refresh`는 백엔드 `external-contracts`/`OAUTH2_CLIENT` 계약과 대조 시 레거시 값이 일치한다. React 상수를 여기에 맞추는 것을 우선 검토하되, 최종은 실 백엔드로 확인한다.
+**연결 방식 참고**: 백엔드는 SockJS 엔드포인트 `/ws`와 native 엔드포인트 `/ws-native` **둘 다** 등록한다(`StompConfig`, `websocket-gateway.yml`). React는 SockJS `/ws`를 쓰므로 엔드포인트 자체는 유효하고, **토큰만 SockJS URL 쿼리로** 붙이면 된다: `new SockJS(GATEWAY_URL + '/ws?access_token=' + token)`. 게이트웨이 라우팅도 `/ws/**`·`/ws-native/**`·`/msg/**`를 모두 통과시킨다(`api-gateway.yml`).
 
 ## 9. React 이식 체크리스트
 
-- [ ] STOMP 목적지 상수 정정: send `/msg/chat.send`, broadcast `/topic/chat/{roomId}`, badge `/user/queue/chat/badge`(ack는 유지).
-- [ ] STOMP 핸드셰이크 토큰을 **쿼리 `?access_token=`**로 전달(연결 방식이 native `/ws-native`인지 SockJS `/ws`인지 백엔드와 확인).
-- [ ] 토큰 재발급 경로/응답 위치 확인(`/auth/refresh` + `Authorization` 헤더 vs 현재 `/auth/reissue` + body).
+아래 8건은 백엔드 확인 완료(§8) — 값 정정은 확정이다.
+
+- [ ] `chatStompApi.ts` STOMP 목적지 정정: send `/app/chat.send`→**`/msg/chat.send`**, broadcast `/topic/chat/rooms/{id}`→**`/topic/chat/{id}`**, badge `/user/queue/my-chat-room-badge`→**`/user/queue/chat/badge`**(ack `/user/queue/chat/ack`는 유지).
+- [ ] `stompClient.ts` 핸드셰이크 토큰을 `connectHeaders`가 아니라 **SockJS URL 쿼리 `?access_token=`**로 전달.
+- [ ] `apiClient.ts` 토큰 재발급 정정: `/auth/reissue`→**`/auth/refresh`**, 토큰을 body가 아니라 **응답 `Authorization` 헤더**에서 추출(성공 201).
+- [ ] `chatRoomApi.ts` REST 정정: 나가기 `DELETE .../members/me`→**`DELETE .../members`**, 수정 `PUT`→**`PATCH /chat/room/{id}`**(부분 업데이트 바디).
 - [ ] 401 single-flight refresh + `_retry` + 로그인 리다이렉트(돌아올 URL 저장) 흐름 이식.
 - [ ] 로그인 성공 시 `?accessToken=` 파싱 → 저장 → redirect 복귀.
 - [ ] 채팅 낙관적 전송 프로토콜(clientMessageId·ACK·타임아웃/retry·브로드캐스트 dedup) 이식.
 - [ ] 이전 메시지 커서 로딩 + 스크롤 위치 보정.
 - [ ] `beforeunload` 활동 보고(`PUT .../activity`, fetch keepalive).
 - [ ] 타 유저 프로필 캐시(`GET /user/{id}/profile`, in-flight dedup) — 현재 `userApi.ts`에 없음.
-- [ ] REST 메서드/경로 차이(나가기·수정) 백엔드 확인 후 정정.
 
 ## 10. 관련 문서
 
