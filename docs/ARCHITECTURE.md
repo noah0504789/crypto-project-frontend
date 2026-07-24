@@ -57,10 +57,10 @@ src/
   types/                # 도메인 타입 + 서버 요청/응답 타입
   utils/                # 순수 함수: 매퍼·포매터·스토리지·검증  → docs/UTILITIES.md
   components/           # 재사용 UI (폴더당 .tsx + .css)
-  pages/                # 라우트 단위 화면 (단일 파일 또는 폴더)  → docs/PAGES.md
+  pages/                # 라우트 단위 화면 (폴더 단위)  → docs/PAGES.md
   assets/               # 이미지
 ```
-파일 컨벤션: 재사용 컴포넌트는 `components/Xxx/Xxx.tsx`+`Xxx.css`. 페이지는 단순하면 `pages/Xxx.tsx`, 하위 라우트가 있으면 `pages/Xxx/Xxx.tsx`.
+파일 컨벤션: 재사용 컴포넌트는 `components/Xxx/Xxx.tsx`+`Xxx.css`. 페이지도 **디렉토리 단위**로 `pages/XxxPage/XxxPage.tsx`(+ 있으면 `XxxPage.css`). 상세는 `.claude/rules/code-style.md`.
 
 ## 상태 관리 아키텍처
 전역 상태 라이브러리 없음. **`App.tsx`가 전역 상태의 단일 원천**:
@@ -76,19 +76,13 @@ src/
 ### REST — `apis/apiClient.ts` 중심
 - `apiClient`(axios) 하나에 **요청/응답 인터셉터**를 걸어 인증을 횡단 처리한다:
   - 요청: `getAccessToken()`으로 `Authorization: Bearer` 자동 첨부.
-  - 응답: 401 시 `/auth/reissue`로 재발급 → 원요청 1회 재시도(`_retry` 플래그로 무한루프 방지). 상세 `docs/AUTH.md`.
+  - 응답: 401 시 refresh로 새 access token 발급 → 원요청 1회 재시도(single-flight + `_retry`로 무한루프 방지). 경로·응답 계약은 `docs/API_CONTRACT.md` §2, 구현 상세 `docs/AUTH.md`.
 - 도메인 API 함수(`{domain}Api.ts`)는 `apiClient`만 쓰면 토큰/재발급을 신경 쓸 필요가 없다. **컴포넌트는 axios/fetch를 직접 호출하지 않는다.**
 - `baseURL = GATEWAY_URL`, `withCredentials: true`(refresh 쿠키).
 
 ### 실시간 — `apis/stompClient.ts` + `apis/chatStompApi.ts`
-- 전송: STOMP over SockJS, 엔드포인트 `GATEWAY_URL/ws`. `createStompClient()`가 토큰을 connectHeaders에 실어 `Client`를 만든다(자동 재연결 `reconnectDelay: 5000`).
-- 구독/발행 로직은 `chatStompApi.ts` 헬퍼로 캡슐화(페이지는 destination 문자열을 직접 다루지 않음):
-  | 방향 | destination | 용도 |
-  | --- | --- | --- |
-  | 발행 | `/app/chat.send` | 메시지 전송 |
-  | 구독 | `/topic/chat/rooms/{roomId}` | 방 메시지 브로드캐스트 |
-  | 구독 | `/user/queue/chat/ack` | 전송 결과 ACK |
-  | 구독 | `/user/queue/my-chat-room-badge` | 내 채팅방 안읽음 뱃지 |
+- 전송: STOMP over SockJS, 엔드포인트 `GATEWAY_URL/ws`. `createStompClient()`가 **핸드셰이크 URL 쿼리(`?access_token=`)로 토큰을 실어** `Client`를 만든다(자동 재연결 `reconnectDelay: 5000`, 재연결마다 최신 토큰).
+- 구독/발행 로직은 `chatStompApi.ts` 헬퍼로 캡슐화한다(페이지는 destination 문자열을 직접 다루지 않음). **destination·payload 계약은 `docs/API_CONTRACT.md` §3.**
 - 라이프사이클: 페이지 `useEffect`에서 `activate()`, cleanup에서 `deactivate()`. 방/유저 의존성 변화 시 재연결.
 - ⚠️ STOMP에는 REST 같은 401 자동 재발급이 없다(연결 시점 토큰 만료 시 재연결만 반복). 개선 여지 — `docs/AUTH.md`.
 

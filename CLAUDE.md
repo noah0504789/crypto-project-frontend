@@ -50,7 +50,7 @@ npm run preview  # 빌드 결과 미리보기
 
 ## 의사소통
 - 한국어로 설명한다. `원인 → 수정 → 영향 범위 → 검증` 순서를 따른다.
-- 코드 설명 시 관련 파일 경로·함수명을 함께 제시한다(예: `src/pages/ChatRoomPage.tsx`의 `handleSubmit`).
+- 코드 설명 시 관련 파일 경로·함수명을 함께 제시한다(예: `src/pages/ChatRoomPage/ChatRoomPage.tsx`의 `handleSubmit`).
 - 근거를 확인할 수 없는 내용은 추측하지 않고 `확인 필요`로 표시한다. 특히 백엔드 응답 형태는 `docs/API_CONTRACT.md`와 실제 백엔드(`../crypto-project-backend`)를 대조해 확인한다.
 
 ## 코드 스타일

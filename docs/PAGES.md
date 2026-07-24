@@ -22,7 +22,7 @@
 
 ## 1. 홈 (Home)
 
-### `/` — HomePage (`pages/HomePage.tsx`)
+### `/` — HomePage (`pages/HomePage/HomePage.tsx`)
 - **역할**: 랜딩(메인).
 - **기능**: 현재는 플레이스홀더. `<h1>메인 페이지</h1>` + "테스트 알림 발생" 버튼뿐.
 - **플로우**: 버튼 클릭 → `onMockAlert`(App의 `handleMockAlert`) → 가짜 `UpbitTickerAlertEvent` 생성 → [알림](#4-알림-notification) 드롭다운에 누적.
@@ -35,7 +35,7 @@
 
 가상화폐 오픈채팅. 목록·CRUD·실시간 메시지로 구성. 관련 API는 `apis/chatRoomApi.ts`, `apis/chatMessageApi.ts`, `apis/chatStompApi.ts`.
 
-### `/chat` — ChatPage (인기 채팅방) (`pages/ChatPage.tsx`)
+### `/chat` — ChatPage (인기 채팅방) (`pages/ChatPage/ChatPage.tsx`)
 - **역할**: 누구나 볼 수 있는 인기 오픈채팅방 목록.
 - **기능**:
   - 마운트 시 인기 채팅방 조회(카테고리 고정 `CRYPTO_CURRENCY`, limit 10).
@@ -53,7 +53,7 @@
 - **API**: `getPopularChatRooms`.
 - **로그인 필요**: 목록 조회 X, **입장은 O**.
 
-### `/chat/my` — MyChatRoomPage (내 채팅방) (`pages/MyChatRoomPage.tsx`)
+### `/chat/my` — MyChatRoomPage (내 채팅방) (`pages/MyChatRoomPage/MyChatRoomPage.tsx`)
 - **역할**: 내가 참여 중인 채팅방 목록 + 실시간 뱃지.
 - **기능**:
   - 내 채팅방 조회(limit 10, 커서: `lastUnreadFlag`+`lastMsgCreatedAt`+`lastId`).
@@ -65,7 +65,7 @@
   미로그인 → 안내 카드
   로그인:
     마운트 → getMyChatRooms() → 목록
-    STOMP connect → subscribeMyChatRoomBadge(/user/queue/my-chat-room-badge)
+    STOMP connect → subscribeMyChatRoomBadge()
        이벤트 수신 → (내가 멤버인 방인지 확인) → unreadMsgCnt+1, 최근 메시지 갱신
     입장 → /chat/room?roomId={id}
     수정(방장) → /chat/update?roomId&title&description&category  (쿼리스트링으로 기존 값 전달)
@@ -75,7 +75,7 @@
 - ⚠️ 조회 **실패 시 목 데이터로 폴백**(`mockMyChatRooms`) — `MOCK_DATA.md` 3번.
 - **로그인 필요**: O.
 
-### `/chat/create` — CreateChatRoomPage (`pages/CreateChatRoomPage.tsx`)
+### `/chat/create` — CreateChatRoomPage (`pages/CreateChatRoomPage/CreateChatRoomPage.tsx`)
 - **역할**: 새 채팅방 생성 폼.
 - **기능**: 제목(최대 50자)·카테고리(가상화폐 고정)·설명(최대 300자). 제목/설명 공백 검증.
 - **플로우**:
@@ -87,7 +87,7 @@
 - **API**: `createChatRoom`.
 - **로그인 필요**: O.
 
-### `/chat/update` — UpdateChatRoomPage (`pages/UpdateChatRoomPage.tsx`)
+### `/chat/update` — UpdateChatRoomPage (`pages/UpdateChatRoomPage/UpdateChatRoomPage.tsx`)
 - **역할**: 기존 채팅방 정보 수정(방장용).
 - **기능**: `MyChatRoomPage`에서 **쿼리스트링으로 넘어온** `roomId`·`title`·`description`·`category`를 초기값으로 폼 구성. 카테고리 유효성은 `isChatRoomCategory` 가드로 검증.
 - **플로우**:
@@ -99,7 +99,7 @@
 - **API**: `updateChatRoom`.
 - **로그인 필요**: O. (권한은 서버가 검증; 화면은 방장 접근 전제)
 
-### `/chat/room?roomId=` — ChatRoomPage (실시간 채팅방) (`pages/ChatRoomPage.tsx`)
+### `/chat/room?roomId=` — ChatRoomPage (실시간 채팅방) (`pages/ChatRoomPage/ChatRoomPage.tsx`)
 - **역할**: 실제 채팅이 오가는 방. 채팅 카테고리의 핵심 화면.
 - **기능**:
   - 최근 메시지 조회(limit 10) → 하단 스크롤.
@@ -115,9 +115,9 @@
   로그인 & 유효:
     (1) getChatMessages() → reverse → 렌더 → 하단 스크롤
     (2) STOMP connect:
-          구독 /topic/chat/rooms/{roomId}  (수신 → 목록 반영, 하단 근처면 자동 스크롤)
-          구독 /user/queue/chat/ack        (success=false → 해당 메시지 failed)
-    전송: 입력 → pending 추가 → sendChatMessage(/app/chat.send)
+          subscribeChatRoomMessages()  (수신 → 목록 반영, 하단 근처면 자동 스크롤)
+          subscribeChatMessageAck()    (success=false → 해당 메시지 failed)
+    전송: 입력 → pending 추가 → sendChatMessage()
           발행 실패 시 즉시 failed
     상단 스크롤(임계 40px) → loadPreviousMessages(커서: 가장 오래된 메시지) → 앞에 prepend + 스크롤 보정
   ```
@@ -129,7 +129,7 @@
 
 ## 3. 가격 알림 (Price Alerts)
 
-### `/price-alerts` — PriceAlertsPage (`pages/PriceAlertsPage.tsx`)
+### `/price-alerts` — PriceAlertsPage (`pages/PriceAlertsPage/PriceAlertsPage.tsx`)
 - **역할**: 코인별 가격 변화율 알림 **설정**(수신은 아래 [알림](#4-알림-notification) 카테고리).
 - **기능**:
   - 마켓 추가 모달(멀티 선택) → 폼에 카드 추가.
@@ -213,7 +213,7 @@
 
 상세 구현은 `docs/AUTH.md`. 여기서는 화면만 요약.
 
-### `/login-success?accessToken=` — LoginSuccessPage (`pages/LoginSuccessPage.tsx`)
+### `/login-success?accessToken=` — LoginSuccessPage (`pages/LoginSuccessPage/LoginSuccessPage.tsx`)
 - **역할**: OAuth2 리다이렉트 착지점("로그인 처리 중..."만 잠깐 표시).
 - **플로우**:
   ```

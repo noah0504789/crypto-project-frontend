@@ -50,7 +50,7 @@
 | `isValidRoomId(id)` | `NaN` 아니고 `> 0` |
 | `createPendingChatMessage({...})` | 전송 즉시 표시할 `status: 'pending'` 메시지 생성(임시 id = `Date.now()`) |
 | `mapChatMessageResponseItemToChatMessage(item)` | 조회 응답 → `ChatMessage`(`status: 'sent'`) |
-| `mapBroadcastEventToChatMessage({event, fallbackWriterName})` | STOMP 브로드캐스트 → `ChatMessage`. payload의 문자열 id/roomId를 `Number(...)`로 변환 |
+| `mapBroadcastEventToChatMessage({event, fallbackWriterName})` | STOMP 브로드캐스트(flat payload) → `ChatMessage`. `messageId`/`roomId`를 `Number(...)`로, `timestamp`(epoch millis)를 `createdAt`(ISO)로 변환 |
 | `getAvatarText(name)` | 이름 앞 2글자 대문자(아바타) |
 
 > 채팅 메시지 상태 모델(`pending`/`sent`/`failed`)과 낙관적 전송 흐름은 `docs/PAGES.md`(채팅) 및 `docs/ARCHITECTURE.md`(핵심 패턴) 참고.

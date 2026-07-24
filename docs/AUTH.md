@@ -8,10 +8,10 @@
 | `src/apis/authApi.ts` | OAuth2 로그인 URL 생성, 로그아웃 요청 |
 | `src/apis/apiClient.ts` | 요청에 토큰 자동 첨부 + 401 시 자동 재발급/재시도 |
 | `src/utils/authStorage.ts` | access token / 로그인 후 이동경로를 `sessionStorage`에 저장 |
-| `src/pages/LoginSuccessPage.tsx` | OAuth2 리다이렉트 착지 → 토큰 저장 → 원경로 복귀 |
+| `src/pages/LoginSuccessPage/LoginSuccessPage.tsx` | OAuth2 리다이렉트 착지 → 토큰 저장 → 원경로 복귀 |
 | `src/components/Modal/LoginModal.tsx` | 소셜 로그인 버튼(구글/카카오) |
 | `src/App.tsx` | 로그아웃 처리, 로그인 사용자 상태 보유 |
-| `src/apis/stompClient.ts` | WebSocket 연결 시 토큰을 헤더로 전달 |
+| `src/apis/stompClient.ts` | WebSocket 핸드셰이크 URL 쿼리(`?access_token=`)로 토큰 전달 |
 
 토큰 방식: **access token은 프론트가 `sessionStorage`로 보관**하고, **refresh token은 백엔드가 관리하는 쿠키**(httpOnly 추정)로 다룬다. 그래서 axios 인스턴스는 모두 `withCredentials: true`.
 
@@ -35,7 +35,7 @@ export async function logout() {
 
 - `getOAuthLoginUrl`은 **문자열만 반환**한다. 실제 이동은 `LoginModal`이 `<a href>`로 수행한다. 이는 OAuth2가 브라우저 리다이렉트 기반이라 XHR로 처리할 수 없기 때문이다.
 - `logout`은 `apiClient`(토큰 첨부됨)로 `POST /auth/logout`을 보낸다. 클라이언트 측 토큰 삭제는 여기서 하지 않고 호출부(`App.handleLogout`)가 담당한다.
-- 토큰 **재발급**(`/auth/reissue`)은 이 파일이 아니라 `apiClient.ts` 인터셉터 안에 있다(아래 참고).
+- 토큰 **재발급**(`/auth/refresh`)은 이 파일이 아니라 `apiClient.ts` 인터셉터 안에 있다(아래 참고).
 
 ---
 
@@ -71,18 +71,21 @@ apiClient.interceptors.request.use((config) => {
 ```
 요청 → 401 응답
   ├─ 아래 조건이면 재발급 안 하고 그대로 실패:
-  │    · 401이 아님 / 이미 재시도함(_retry) / 요청 자체가 /auth/reissue
+  │    · 401이 아님 / 이미 재시도함(_retry) / 요청 자체가 /auth/refresh
   └─ 그 외:
        originalRequest._retry = true
-       POST /auth/reissue (authClient, 쿠키 기반)   ──▶ { accessToken }
+       refreshAccessTokenOnce(): POST /auth/refresh (authClient, 쿠키 기반)
+         ──▶ 새 access token은 응답 body가 아니라 Authorization 헤더(Bearer)에서 추출
          성공: setAccessToken(new) → 원요청 헤더 갱신 → apiClient(originalRequest) 재시도
-         실패: removeAccessToken() → 원 에러 전파(사실상 로그아웃 상태)
+         실패: removeAccessToken() + saveRedirectAfterLogin(현재 경로) → 원 에러 전파
 ```
 포인트:
+- **single-flight**: 동시에 터진 401은 `refreshPromise` 하나로 합쳐 재발급을 한 번만 보낸다(`refreshAccessTokenOnce`).
 - `_retry` 플래그로 **무한 재시도 방지**(재발급 후에도 401이면 한 번 더 시도하지 않음).
 - 재발급 요청은 별도 인스턴스 `authClient`로 보낸다(요청 인터셉터가 없어 만료된 토큰을 붙이지 않기 위함).
-- `/auth/reissue` 자체가 401이면 재귀 방지를 위해 건너뛴다.
-- 재발급 실패 시 토큰만 지운다. **화면 리다이렉트는 하지 않는다** → 각 페이지가 `user === null`로 안내를 처리.
+- `/auth/refresh` 자체가 401이면 재귀 방지를 위해 건너뛴다.
+- 재발급 실패 시 토큰을 지우고 **돌아올 경로만 저장**(`saveRedirectAfterLogin`)한다. **화면 리다이렉트는 하지 않는다** → 각 페이지가 `user === null`로 안내(로그인 모달 유도)를 처리.
+- 경로·응답 계약은 `docs/API_CONTRACT.md` §2 인증.
 
 ### 4) 로그아웃 — `App.handleLogout`
 ```ts
@@ -98,12 +101,12 @@ finally {
 서버 요청이 실패해도 `finally`에서 **클라이언트 상태는 반드시 정리**한다.
 
 ### 5) WebSocket 인증 — `stompClient.ts`
-STOMP 연결도 같은 access token을 헤더로 실어 보낸다.
+STOMP 연결은 같은 access token을 **핸드셰이크 URL 쿼리로** 실어 보낸다(게이트웨이 `WebsocketHandshakeAuthWebFilter`가 쿼리 `access_token`으로 인증).
 ```ts
-const accessToken = getAccessToken();
-connectHeaders.Authorization = `Bearer ${accessToken}`;  // 있을 때만
+// connectHeaders가 아니라 SockJS 핸드셰이크 URL 쿼리로 넘긴다(재연결마다 최신 토큰).
+new SockJS(`${GATEWAY_URL}/ws?access_token=${getAccessToken()}`);
 ```
-- 단, STOMP에는 axios 같은 **401 자동 재발급 로직이 없다.** 연결 시점의 토큰이 만료됐다면 재연결(`reconnectDelay: 5000`)만 반복될 수 있다. (개선 여지 — 확인 필요)
+- 단, STOMP에는 axios 같은 **401 자동 재발급 로직이 없다.** 연결 시점의 토큰이 만료됐다면 재연결(`reconnectDelay: 5000`)만 반복될 수 있다. (개선 여지)
 
 ---
 
@@ -119,16 +122,10 @@ connectHeaders.Authorization = `Bearer ${accessToken}`;  // 있을 때만
 
 ---
 
-## 관련 계약 (요약)
-자세한 요청/응답은 `docs/API_CONTRACT.md`의 "인증" 절 참고.
-
-| 동작 | 요청 | 응답 |
-| --- | --- | --- |
-| 소셜 로그인 | `GET /oauth2/authorization/{google\|kakao}` (브라우저 이동) | `/login-success?accessToken=...` 리다이렉트 |
-| 재발급 | `POST /auth/reissue` (쿠키) | `{ accessToken }` |
-| 로그아웃 | `POST /auth/logout` | - |
+## 관련 계약
+요청/응답 계약(소셜 로그인·재발급·로그아웃 경로와 응답 형태)의 정본은 **`docs/API_CONTRACT.md` §2 인증**이다. 이 문서는 프론트 구현 흐름만 다룬다.
 
 ## 확인/개선 여지 (실연동 시 검토)
 - 로그인 성공 후 `getMyProfile()`로 `user` 채우기 연결(현재 하드코딩).
 - STOMP 연결 토큰 만료 시 재발급 전략 부재.
-- refresh 토큰의 실제 저장 방식(쿠키 속성)과 `/auth/reissue`가 참조하는 자격증명 — 백엔드(`oauth2-*`, gateway) 대조.
+- refresh 토큰의 실제 저장 방식(쿠키 속성)과 `/auth/refresh`가 참조하는 자격증명 — 백엔드(`oauth2-*`, gateway) 대조.
