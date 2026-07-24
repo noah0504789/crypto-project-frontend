@@ -17,7 +17,7 @@
 
 ## 컴포넌트
 - 함수 컴포넌트 + Hooks. `export default function Name(...)`.
-- 파일 구조: 재사용 컴포넌트는 `components/Xxx/Xxx.tsx` + `Xxx.css`. 페이지는 `pages/Xxx.tsx`(단순) 또는 `pages/Xxx/Xxx.tsx`(하위 라우트 있을 때).
+- 파일 구조: 재사용 컴포넌트는 `components/Xxx/Xxx.tsx` + `Xxx.css`. **페이지도 디렉토리 단위**로 `pages/XxxPage/XxxPage.tsx` + (있으면) `XxxPage.css`. CSS는 같은 폴더 상대 import(`import './XxxPage.css'`).
 - 이벤트 핸들러는 `handleXxx`, 콜백 props는 `onXxx`.
 - 로딩 버튼은 공용 `LoadingButton`(`isLoading`, `loadingText`) 사용.
 
