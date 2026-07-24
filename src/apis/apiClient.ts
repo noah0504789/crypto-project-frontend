@@ -6,10 +6,6 @@ type RetryableAxiosRequestConfig = AxiosRequestConfig & {
   _retry?: boolean;
 };
 
-type ReissueAccessTokenResponse = {
-  accessToken: string;
-};
-
 export const apiClient = axios.create({
   baseURL: GATEWAY_URL,
   withCredentials: true,
@@ -41,20 +37,30 @@ apiClient.interceptors.response.use(
 
     const isUnauthorized = error.response.status === 401;
     const isAlreadyRetried = originalRequest._retry === true;
-    const isReissueRequest = originalRequest.url?.includes('/auth/reissue');
+    const isRefreshRequest = originalRequest.url?.includes('/auth/refresh');
 
-    if (!isUnauthorized || isAlreadyRetried || isReissueRequest) {
+    if (!isUnauthorized || isAlreadyRetried || isRefreshRequest) {
       return Promise.reject(error);
     }
 
     originalRequest._retry = true;
 
     try {
-      const response = await authClient.post<ReissueAccessTokenResponse>(
-        '/auth/reissue',
-      );
+      // 백엔드(oauth2-client AuthController): POST /auth/refresh → 201,
+      // 새 access token은 응답 body가 아니라 Authorization 헤더(Bearer)로 온다.
+      const response = await authClient.post('/auth/refresh');
 
-      const newAccessToken = response.data.accessToken;
+      const authHeader =
+        response.headers['authorization'] ?? response.headers['Authorization'];
+      const newAccessToken =
+        typeof authHeader === 'string' && authHeader.startsWith('Bearer ')
+          ? authHeader.slice(7)
+          : null;
+
+      if (!newAccessToken) {
+        removeAccessToken();
+        return Promise.reject(error);
+      }
 
       setAccessToken(newAccessToken);
 

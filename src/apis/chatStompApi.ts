@@ -2,9 +2,9 @@ import type { Client } from '@stomp/stompjs';
 import type { MyChatRoomBadgeEvent } from '@/types/chatRoom';
 import type { ChatMessageAck, ChatMessageBroadcastEvent, ChatMessageRequest } from '@/types/chatMessage';
 
-const MY_CHAT_ROOM_BADGE_DESTINATION = '/user/queue/my-chat-room-badge';
+const MY_CHAT_ROOM_BADGE_DESTINATION = '/user/queue/chat/badge';
 
-const CHAT_MESSAGE_SEND_DESTINATION = '/app/chat.send';
+const CHAT_MESSAGE_SEND_DESTINATION = '/msg/chat.send';
 const CHAT_MESSAGE_ACK_DESTINATION = '/user/queue/chat/ack';
 
 export function subscribeMyChatRoomBadge(
@@ -32,7 +32,7 @@ export function subscribeChatRoomMessages(
   roomId: number,
   onMessage: (event: ChatMessageBroadcastEvent) => void,
 ) {
-  return client.subscribe(`/topic/chat/rooms/${roomId}`, (message) => {
+  return client.subscribe(`/topic/chat/${roomId}`, (message) => {
     const event = JSON.parse(message.body) as ChatMessageBroadcastEvent;
     onMessage(event);
   });

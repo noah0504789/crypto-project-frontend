@@ -64,9 +64,9 @@ export async function updateChatRoom(
   roomId: number,
   request: UpdateChatRoomRequest,
 ) {
-  await apiClient.put(`/chat/room/${roomId}`, request);
+  await apiClient.patch(`/chat/room/${roomId}`, request);
 }
 
 export async function leaveChatRoom(roomId: number) {
-  await apiClient.delete(`/chat/room/${roomId}/members/me`);
+  await apiClient.delete(`/chat/room/${roomId}/members`);
 }

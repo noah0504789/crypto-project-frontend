@@ -39,31 +39,31 @@ React SPA를 실제 API Gateway에 연동하기 위한 작업 목록. 근거는 
 
 React 상수/경로가 백엔드와 어긋난 8건. **레거시 값이 정답**임을 백엔드 소스로 확인했다. 값만 바꾸면 되는 확정 작업.
 
-- [ ] **1.1 STOMP 전송 목적지** — `src/apis/chatStompApi.ts`
+- [x] **1.1 STOMP 전송 목적지** — `src/apis/chatStompApi.ts`
   - `CHAT_MESSAGE_SEND_DESTINATION`: `/app/chat.send` → **`/msg/chat.send`**
   - 근거: `websocket-gateway/.../StompConfig.java`(`setApplicationDestinationPrefixes`) + `git-config-repo/dynamic/websocket-gateway.yml`(`application-destination-prefix: /msg`) + `StompController.java`(`@MessageMapping("/chat.send")`).
 
-- [ ] **1.2 방 브로드캐스트 구독** — `src/apis/chatStompApi.ts`
+- [x] **1.2 방 브로드캐스트 구독** — `src/apis/chatStompApi.ts`
   - `subscribeChatRoomMessages`: `/topic/chat/rooms/${roomId}` → **`/topic/chat/${roomId}`**
   - 근거: `common/common-core/.../StompDestination.java` → `CHAT_ROOM_PREFIX("/topic/chat/")`.
 
-- [ ] **1.3 배지 구독** — `src/apis/chatStompApi.ts`
+- [x] **1.3 배지 구독** — `src/apis/chatStompApi.ts`
   - `MY_CHAT_ROOM_BADGE_DESTINATION`: `/user/queue/my-chat-room-badge` → **`/user/queue/chat/badge`**
   - 근거: `StompDestination` → `CHAT_ROOM_BADGE_QUEUE("/queue/chat/badge")` + user prefix `/user`.
 
-- [ ] **1.4 ACK 구독** — 이미 `/user/queue/chat/ack` (일치 ✓, 변경 없음). 근거: `StompDestination.CHAT_ACK_QUEUE` + `@SendToUser("/queue/chat/ack")`.
+- [x] **1.4 ACK 구독** — 이미 `/user/queue/chat/ack` (일치 ✓, 변경 없음). 근거: `StompDestination.CHAT_ACK_QUEUE` + `@SendToUser("/queue/chat/ack")`.
 
-- [ ] **1.5 토큰 재발급** — `src/apis/apiClient.ts`
+- [x] **1.5 토큰 재발급** — `src/apis/apiClient.ts`
   - 경로 `/auth/reissue` → **`/auth/refresh`**.
   - 응답 파싱: body `{accessToken}` → **응답 `Authorization` 헤더**에서 `Bearer ` 제거 후 추출(성공 status 201).
   - 근거: `oauth2-client/.../web/AuthController.java` — `@PostMapping("${api-path.auth.refresh:/auth/refresh}")`, `ResponseEntity.status(CREATED).header(AUTHORIZATION, "Bearer "+token).header(SET_COOKIE, ...)`, `Access-Control-Expose-Headers: Authorization`.
   - 참고 파싱: `const h = res.headers['authorization']; const token = h?.startsWith('Bearer ') ? h.slice(7) : null;`
 
-- [ ] **1.6 방 나가기** — `src/apis/chatRoomApi.ts` `leaveChatRoom`
+- [x] **1.6 방 나가기** — `src/apis/chatRoomApi.ts` `leaveChatRoom`
   - `DELETE /chat/room/${roomId}/members/me` → **`DELETE /chat/room/${roomId}/members`** (204)
   - 근거: `chat/.../web/ChatRoomController.java` `@DeleteMapping("${api-path.chat.room-members:/room/{roomId}/members}")`.
 
-- [ ] **1.7 방 수정** — `src/apis/chatRoomApi.ts` `updateChatRoom`
+- [x] **1.7 방 수정** — `src/apis/chatRoomApi.ts` `updateChatRoom`
   - `PUT /chat/room/${roomId}` → **`PATCH /chat/room/${roomId}`** (부분 업데이트 바디, 204). 변경된 필드만 담아 보낸다.
   - 근거: `ChatRoomController.java` `@PatchMapping("${api-path.chat.room:/room/{roomId}}")`.
 
