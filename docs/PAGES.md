@@ -71,7 +71,8 @@
     수정(방장) → /chat/update?roomId&title&description&category  (쿼리스트링으로 기존 값 전달)
     나가기 → confirm → leaveChatRoom(id) → 목록에서 제거
   ```
-- **API/STOMP**: `getMyChatRooms`, `leaveChatRoom`, `subscribeMyChatRoomBadge`.
+- **API/STOMP**: `getMyChatRooms`, `getMyChatRoom`(배지 방이 목록에 없을 때 단건 조회), `leaveChatRoom`, `subscribeMyChatRoomBadge`.
+- **배지 갱신(4.9)**: 배지 이벤트 수신 시 해당 방을 안읽음+1·최근 메시지 갱신 후 **목록 맨 앞으로 이동**. 목록에 없는 방이면 `getMyChatRoom`으로 조회해 prepend.
 - ⚠️ 조회 **실패 시 목 데이터로 폴백**(`mockMyChatRooms`) — `MOCK_DATA.md` 3번.
 - **로그인 필요**: O.
 
@@ -121,8 +122,11 @@
           발행 실패 시 즉시 failed
     상단 스크롤(임계 40px) → loadPreviousMessages(커서: 가장 오래된 메시지) → 앞에 prepend + 스크롤 보정
   ```
-- **API/STOMP**: `getChatMessages`, `subscribeChatRoomMessages`, `subscribeChatMessageAck`, `sendChatMessage`.
-- ⚠️ 방 제목 하드코딩(`roomTitle = "비트코인 단기 시황방"`) — `MOCK_DATA.md` 4번.
+- **API/STOMP**: `getChatMessages`, `getChatRoom`(제목·`msgCnt`), `subscribeChatRoomMessages`, `subscribeChatMessageAck`, `sendChatMessage`, `getUserProfile`(상대 닉네임/아바타), `reportActivity`(읽음 보고).
+- **방 제목**: `getChatRoom(roomId)`로 조회해 표시(하드코딩 제거됨).
+- **ACK 타임아웃**: 전송 후 3초 내 ACK/브로드캐스트가 없으면 해당 말풍선을 `failed`로 표시(재전송 가능).
+- **상대 프로필**: 내가 아닌 작성자 닉네임/아바타는 `getUserProfile`로 채운다(캐시+dedup). 실패 시 `사용자 {id}` 폴백.
+- **읽음 보고**: 방을 떠날 때(언마운트)·`beforeunload`에 `reportActivity`(keepalive fetch)로 `lastMsgReadSeq`(=`msgCnt`+수신 브로드캐스트 수)·`lastMsgCreatedAtMs` 전송.
 - **로그인 필요**: O.
 
 ---

@@ -25,9 +25,8 @@
 ```
 **연동**: `mockMyChatRooms` 상수 삭제, catch에서 빈 배열/에러 처리로 복원(주석 라인 활성화). 백엔드가 붙으면 실패 시 목이 뜨는 것은 디버깅을 방해한다.
 
-## 4. 채팅방 제목 하드코딩 — `src/pages/ChatRoomPage/ChatRoomPage.tsx`
-**현재**: `const roomTitle = "비트코인 단기 시황방";` — 어떤 방을 들어가도 같은 제목.
-**연동**: 채팅방 상세(제목 등)를 받아올 방법 필요. 옵션 (a) 방 목록에서 넘어올 때 쿼리스트링/state로 title 전달, (b) `GET /chat/room/{roomId}` 상세 조회 사용(엔드포인트 존재 — `docs/API_CONTRACT.md` §1). `roomId`는 이미 쿼리스트링으로 받고 있음.
+## 4. 채팅방 제목 하드코딩 — `src/pages/ChatRoomPage/ChatRoomPage.tsx` ✅ **해결 완료**
+**해결**: `GET /chat/room/{roomId}`(`chatRoomApi.getChatRoom`) 상세 조회로 `roomTitle`을 상태로 받아 렌더한다. 같은 조회의 `msgCnt`는 읽음 보고(활동) 시퀀스 시작점으로도 쓴다. 하드코딩 상수는 제거됨.
 
 ## 5. 알림 실시간 수신 미연결 + 테스트 버튼 — `src/App.tsx`, `src/pages/HomePage/HomePage.tsx`
 **현재**:

@@ -30,7 +30,7 @@
 | 방 수정 | `PATCH /chat/room/{roomId}` | 변경 필드만 `{title?, description?, category?}` | 204 |
 | 방 입장(가입) | `POST /chat/room/{roomId}/members` | — | 201·204 |
 | 방 나가기 | `DELETE /chat/room/{roomId}/members` | — | 204 |
-| 활동 보고 | `PUT /chat/room/{roomId}/activity` | `lastMsgSeq, lastMsgMs` | — |
+| 활동 보고 | `PUT /chat/room/{roomId}/activity` | `lastMsgReadSeq, lastMsgCreatedAtMs` | 204 |
 | 내 프로필 | `GET /user/me` | — | 200·304 |
 | 타 유저 프로필 | `GET /user/{userId}/profile` | — | 2xx |
 | 토큰 재발급 | `POST /auth/refresh` | 빈 body, 쿠키 | 201 + `Authorization` 헤더 |
@@ -63,17 +63,17 @@
 | --- | --- | --- |
 | `getPopularChatRooms` | `GET /chat/rooms/popular?limit&category&lastId&lastPopularity` | `PopularChatRoomResponse { items: PopularChatRoom[], hasNext }` |
 | `getMyChatRooms` | `GET /chat/rooms/me?limit&lastUnreadFlag&lastMsgCreatedAt&lastId` | `MyChatRoomResponse { items: MyChatRoom[], hasNext }` |
-| `getMyChatRoom(roomId)` | `GET /chat/room/{roomId}/me` | 내 채팅방 단건(목록에 없을 때 prepend용) |
-| `getChatRoom(roomId)` | `GET /chat/room/{roomId}` | 방 상세(`msgCnt` → `lastMsgSeq` 초기값) |
+| `getMyChatRoom(roomId)` | `GET /chat/room/{roomId}/me` | `MyChatRoomResponse` 단건(배지 방이 목록에 없을 때 prepend용) |
+| `getChatRoom(roomId)` | `GET /chat/room/{roomId}` | `ChatRoomDetailResponse { id, hostId, title, description, category, msgCnt, memberCnt, popularity, createdAt }`. `msgCnt`는 최신 시퀀스(읽음 보고 `lastMsgReadSeq` 시작점) |
 | `createChatRoom` | `POST /chat/room` `{ title, description, category }` | 201 |
 | `updateChatRoom` | `PATCH /chat/room/{roomId}` 변경 필드만 `{ title?, description?, category? }` | 204 |
 | `joinChatRoom(roomId)` | `POST /chat/room/{roomId}/members` | 201·204 |
 | `leaveChatRoom(roomId)` | `DELETE /chat/room/{roomId}/members` | 204 |
-| `reportActivity` | `PUT /chat/room/{roomId}/activity?lastMsgSeq&lastMsgMs` | - |
+| `reportActivity` | `PUT /chat/room/{roomId}/activity?lastMsgReadSeq&lastMsgCreatedAtMs` | 204 |
 
 - `category`는 현재 `CRYPTO_CURRENCY` 단일값(`types/chatRoom.ts`의 `CHAT_ROOM_CATEGORIES`).
-- 활동 보고는 `beforeunload`에서 유실 방지를 위해 `fetch(keepalive:true)` + 수동 `Authorization` 헤더로 보낸다(구현 상세는 `TODO.md` §4.7).
-- 백엔드 근거: `chat/.../web/ChatRoomController.java` — `@PatchMapping("${api-path.chat.room:/room/{roomId}}")`, `@DeleteMapping("${api-path.chat.room-members:/room/{roomId}/members}")`.
+- 활동 보고는 언마운트/`beforeunload`에서 유실 방지를 위해 `fetch(keepalive:true)` + 수동 `Authorization` 헤더로 보낸다(구현: `chatRoomApi.reportActivity`, 호출: `ChatRoomPage`). 파라미터명은 백엔드 컨트롤러 확인 결과 `lastMsgReadSeq`·`lastMsgCreatedAtMs`다(과거 문서의 `lastMsgSeq`/`lastMsgMs`는 오기 → 정정).
+- 백엔드 근거: `chat/.../web/ChatRoomController.java` — `@GetMapping("/room/{roomId}")`·`@GetMapping("/room/{roomId}/me")`·`@PutMapping("/room/{roomId}/activity")`(`@RequestParam lastMsgReadSeq, lastMsgCreatedAtMs`), `@PatchMapping`/`@DeleteMapping`.
 
 ### 채팅 메시지 (`apis/chatMessageApi.ts`)
 | 프론트 | 요청 | 응답 |
