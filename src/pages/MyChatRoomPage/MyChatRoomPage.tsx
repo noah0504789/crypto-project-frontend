@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { User } from "@/types/user";
 import type { MyChatRoom, MyChatRoomCursor } from "@/types/chatRoom";
 import { formatKoreanChatTime } from "@/utils/dateFormatter";
-import { getMyChatRooms, leaveChatRoom } from "@/apis/chatRoomApi";
+import { getMyChatRoom, getMyChatRooms, leaveChatRoom } from "@/apis/chatRoomApi";
 import { createStompClient } from "@/apis/stompClient";
 import { subscribeMyChatRoomBadge } from "@/apis/chatStompApi";
 import LoadingButton from "@/components/Button/LoadingButton";
@@ -62,6 +62,16 @@ export default function MyChatRoomsPage({ user }: MyChatRoomsPageProps) {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [leavingRoomId, setLeavingRoomId] = useState<number | null>(null);
 
+  // 배지 이벤트 처리용(4.9): 현재 목록 방 id 집합 + prepend 진행 중 방(중복 조회 방지).
+  const roomIdsRef = useRef<Set<number>>(new Set());
+  const prependingRoomIdsRef = useRef<Set<number>>(new Set());
+
+  useEffect(() => {
+    roomIdsRef.current = new Set(
+      myChatRooms.map((room) => Number(room.id)),
+    );
+  }, [myChatRooms]);
+
   useEffect(() => {
     if (!isLoggedIn) {
       return;
@@ -103,6 +113,28 @@ export default function MyChatRoomsPage({ user }: MyChatRoomsPageProps) {
     };
   }, [isLoggedIn]);
 
+  async function prependMissingRoom(roomId: number) {
+    if (prependingRoomIdsRef.current.has(roomId)) {
+      return;
+    }
+
+    prependingRoomIdsRef.current.add(roomId);
+
+    try {
+      const room = await getMyChatRoom(roomId);
+
+      setMyChatRooms((prevRooms) =>
+        prevRooms.some((prevRoom) => Number(prevRoom.id) === roomId)
+          ? prevRooms
+          : [room, ...prevRooms],
+      );
+    } catch (error) {
+      console.error("failed to load chat room for badge:", error);
+    } finally {
+      prependingRoomIdsRef.current.delete(roomId);
+    }
+  }
+
   useEffect(() => {
     if (!isLoggedIn || userId === undefined) {
       return;
@@ -125,20 +157,35 @@ export default function MyChatRoomsPage({ user }: MyChatRoomsPageProps) {
           return;
         }
 
-        setMyChatRooms((prevRooms) =>
-          prevRooms.map((room) => {
-            if (room.id !== roomId) {
-              return room;
-            }
+        // 목록에 없는 방이면 단건 조회 후 맨 앞에 추가(4.9).
+        if (!roomIdsRef.current.has(roomId)) {
+          void prependMissingRoom(roomId);
+          return;
+        }
 
-            return {
-              ...room,
-              unreadMsgCnt: room.unreadMsgCnt + 1,
-              lastMsgContent: event.payload.lastMsgContent,
-              lastMsgCreatedAt: event.payload.lastMsgCreatedAt,
-            };
-          }),
-        );
+        // 목록에 있는 방이면 갱신 후 맨 앞으로 이동(4.9).
+        setMyChatRooms((prevRooms) => {
+          const targetRoom = prevRooms.find(
+            (room) => Number(room.id) === roomId,
+          );
+
+          if (!targetRoom) {
+            return prevRooms;
+          }
+
+          const updatedRoom: MyChatRoom = {
+            ...targetRoom,
+            unreadMsgCnt: targetRoom.unreadMsgCnt + 1,
+            lastMsgContent: event.payload.lastMsgContent,
+            lastMsgCreatedAt: event.payload.lastMsgCreatedAt,
+          };
+
+          const remainingRooms = prevRooms.filter(
+            (room) => Number(room.id) !== roomId,
+          );
+
+          return [updatedRoom, ...remainingRooms];
+        });
       });
     };
 

@@ -22,6 +22,19 @@ export type PopularChatRoomCursor = {
   lastPopularity?: number;
 };
 
+// GET /chat/room/{roomId} 방 상세(백엔드 ChatRoomResponse). id는 문자열, msgCnt는 최신 시퀀스.
+export type ChatRoomDetailResponse = {
+  id: string;
+  hostId: string;
+  title: string;
+  description: string;
+  category: ChatRoomCategory;
+  msgCnt: number;
+  memberCnt: number;
+  popularity: number;
+  createdAt: string;
+};
+
 export type MyChatRoom = {
   id: number;
   hostId: string;

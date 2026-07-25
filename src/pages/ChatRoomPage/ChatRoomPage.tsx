@@ -3,12 +3,14 @@ import { Link, useSearchParams } from "react-router-dom";
 import type { Client } from "@stomp/stompjs";
 
 import { getChatMessages } from "@/apis/chatMessageApi";
+import { getChatRoom, reportActivity } from "@/apis/chatRoomApi";
 import {
   sendChatMessage,
   subscribeChatMessageAck,
   subscribeChatRoomMessages,
 } from "@/apis/chatStompApi";
 import { createStompClient } from "@/apis/stompClient";
+import { getUserProfile } from "@/apis/userApi";
 import type { ChatMessage } from "@/types/chatMessage";
 import type { User } from "@/types/user";
 import {
@@ -28,9 +30,9 @@ type ChatRoomPageProps = {
   user: User | null;
 };
 
-const roomTitle = "비트코인 단기 시황방";
 const MESSAGE_LIMIT = 10;
 const PREVIOUS_MESSAGE_SCROLL_THRESHOLD = 40;
+const ACK_TIMEOUT_MS = 3000;
 
 export default function ChatRoomPage({ user }: ChatRoomPageProps) {
   const [searchParams] = useSearchParams();
@@ -48,6 +50,19 @@ export default function ChatRoomPage({ user }: ChatRoomPageProps) {
   const [isLoadingPreviousMessages, setIsLoadingPreviousMessages] =
     useState(false);
   const [hasNextMessages, setHasNextMessages] = useState(false);
+  const [roomTitle, setRoomTitle] = useState("");
+  const [writerProfiles, setWriterProfiles] = useState<Record<string, string>>(
+    {},
+  );
+
+  // clientMessageId별 ACK 대기 타이머. 시간 내 ACK/브로드캐스트가 없으면 failed 처리(4.3).
+  const ackTimersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(
+    new Map(),
+  );
+  // 읽음 위치 보고(4.7): msgCnt를 시작점으로, 브로드캐스트 1건당 +1.
+  const lastReadSeqRef = useRef(0);
+  const lastMsgCreatedAtMsRef = useRef(0);
+  const hasRoomDetailRef = useRef(false);
 
   const isLoggedIn = user !== null;
   const isInvalidRoomId = !isValidRoomId(roomId);
@@ -62,6 +77,40 @@ export default function ChatRoomPage({ user }: ChatRoomPageProps) {
     isConnected &&
     messageInput.trim().length > 0 &&
     !hasPendingMessage;
+
+  function startAckTimer(clientMessageId: string) {
+    const timers = ackTimersRef.current;
+    const existingTimer = timers.get(clientMessageId);
+
+    if (existingTimer) {
+      clearTimeout(existingTimer);
+    }
+
+    const timer = setTimeout(() => {
+      timers.delete(clientMessageId);
+
+      setMessages((prevMessages) =>
+        prevMessages.map((message) =>
+          message.clientMessageId === clientMessageId &&
+          message.status === "pending"
+            ? { ...message, status: "failed" }
+            : message,
+        ),
+      );
+    }, ACK_TIMEOUT_MS);
+
+    timers.set(clientMessageId, timer);
+  }
+
+  function clearAckTimer(clientMessageId: string) {
+    const timers = ackTimersRef.current;
+    const timer = timers.get(clientMessageId);
+
+    if (timer) {
+      clearTimeout(timer);
+      timers.delete(clientMessageId);
+    }
+  }
 
   useEffect(() => {
     if (!isLoggedIn || isInvalidRoomId) {
@@ -89,6 +138,14 @@ export default function ChatRoomPage({ user }: ChatRoomPageProps) {
 
         setMessages(nextMessages);
         setHasNextMessages(response.hasNext);
+
+        const newestMessage = nextMessages[nextMessages.length - 1];
+
+        if (newestMessage) {
+          lastMsgCreatedAtMsRef.current = new Date(
+            newestMessage.createdAt,
+          ).getTime();
+        }
 
         requestAnimationFrame(() => {
           const chatBox = chatBoxRef.current;
@@ -119,12 +176,46 @@ export default function ChatRoomPage({ user }: ChatRoomPageProps) {
     };
   }, [isLoggedIn, isInvalidRoomId, roomId]);
 
+  // 방 상세 조회(4.5): 제목·읽음 시퀀스 시작점(msgCnt).
+  useEffect(() => {
+    if (!isLoggedIn || isInvalidRoomId) {
+      return;
+    }
+
+    hasRoomDetailRef.current = false;
+
+    let isCancelled = false;
+
+    async function loadRoomDetail() {
+      try {
+        const room = await getChatRoom(roomId);
+
+        if (isCancelled) {
+          return;
+        }
+
+        setRoomTitle(room.title);
+        lastReadSeqRef.current = room.msgCnt ?? 0;
+        hasRoomDetailRef.current = true;
+      } catch (error) {
+        console.error(error);
+      }
+    }
+
+    void loadRoomDetail();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [isLoggedIn, isInvalidRoomId, roomId]);
+
   useEffect(() => {
     if (!isLoggedIn || isInvalidRoomId || !user) {
       return;
     }
 
     const client = createStompClient();
+    const ackTimers = ackTimersRef.current;
 
     stompClientRef.current = client;
 
@@ -143,6 +234,15 @@ export default function ChatRoomPage({ user }: ChatRoomPageProps) {
           event,
           fallbackWriterName,
         });
+
+        // 내 메시지가 브로드캐스트로 확정됨 → ACK 타임아웃 취소(4.3).
+        if (event.clientMessageId) {
+          clearAckTimer(event.clientMessageId);
+        }
+
+        // 서버 저장 1건 = msgCnt+1. 읽음 시퀀스를 함께 올린다(4.7).
+        lastReadSeqRef.current += 1;
+        lastMsgCreatedAtMsRef.current = event.timestamp || Date.now();
 
         setMessages((prevMessages) => {
           const matchedMessageIndex = prevMessages.findIndex(
@@ -192,6 +292,9 @@ export default function ChatRoomPage({ user }: ChatRoomPageProps) {
       });
 
       subscribeChatMessageAck(client, (ack) => {
+        // ACK 도착 → 타임아웃 취소(성공/실패 공통, 4.3).
+        clearAckTimer(ack.clientMessageId);
+
         if (ack.success) {
           return;
         }
@@ -224,9 +327,84 @@ export default function ChatRoomPage({ user }: ChatRoomPageProps) {
     return () => {
       stompClientRef.current = null;
       setIsConnected(false);
+
+      ackTimers.forEach((timer) => clearTimeout(timer));
+      ackTimers.clear();
+
       void client.deactivate();
     };
   }, [isLoggedIn, isInvalidRoomId, roomId, user]);
+
+  // 읽음 위치 보고(4.7): 방을 떠날 때(언마운트) + 탭 종료/새로고침(beforeunload).
+  useEffect(() => {
+    if (!isLoggedIn || isInvalidRoomId) {
+      return;
+    }
+
+    function reportReadActivity() {
+      // 방 상세(msgCnt)를 못 받았으면 시퀀스 시작점이 없어 보고하지 않는다(잘못된 0 보고 방지).
+      if (!hasRoomDetailRef.current) {
+        return;
+      }
+
+      reportActivity({
+        roomId,
+        lastMsgReadSeq: lastReadSeqRef.current,
+        lastMsgCreatedAtMs: lastMsgCreatedAtMsRef.current,
+      });
+    }
+
+    window.addEventListener("beforeunload", reportReadActivity);
+
+    return () => {
+      window.removeEventListener("beforeunload", reportReadActivity);
+      reportReadActivity();
+    };
+  }, [isLoggedIn, isInvalidRoomId, roomId]);
+
+  // 타 유저 프로필 조회(4.8): 아바타/닉네임을 실제 값으로. userApi가 캐시+dedup 처리.
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+
+    const unknownWriterIds = Array.from(
+      new Set(
+        messages
+          .map((message) => message.writerId)
+          .filter(
+            (writerId) =>
+              writerId !== user.id && writerProfiles[writerId] === undefined,
+          ),
+      ),
+    );
+
+    if (unknownWriterIds.length === 0) {
+      return;
+    }
+
+    let isCancelled = false;
+
+    unknownWriterIds.forEach((writerId) => {
+      getUserProfile(writerId)
+        .then((profile) => {
+          if (isCancelled) {
+            return;
+          }
+
+          setWriterProfiles((prevProfiles) =>
+            prevProfiles[writerId] !== undefined
+              ? prevProfiles
+              : { ...prevProfiles, [writerId]: profile.nickname },
+          );
+        })
+        .catch(() => {});
+    });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [messages, user, writerProfiles]);
 
   async function loadPreviousMessages() {
     if (
@@ -365,7 +543,9 @@ export default function ChatRoomPage({ user }: ChatRoomPageProps) {
       clientMessageId,
     });
 
-    if (!isPublished) {
+    if (isPublished) {
+      startAckTimer(clientMessageId);
+    } else {
       setMessages((prevMessages) =>
         prevMessages.map((message) => {
           if (message.clientMessageId !== clientMessageId) {
@@ -410,7 +590,9 @@ export default function ChatRoomPage({ user }: ChatRoomPageProps) {
       clientMessageId: nextClientMessageId,
     });
 
-    if (!isPublished) {
+    if (isPublished) {
+      startAckTimer(nextClientMessageId);
+    } else {
       setMessages((prevMessages) =>
         prevMessages.map((message) => {
           if (message.id !== messageId) {
@@ -454,7 +636,7 @@ export default function ChatRoomPage({ user }: ChatRoomPageProps) {
       <div className="chat-room-shell">
         <div className="chat-room-header">
           <div>
-            <h1>{roomTitle}</h1>
+            <h1>{roomTitle || "채팅방"}</h1>
           </div>
 
           <span
@@ -487,7 +669,9 @@ export default function ChatRoomPage({ user }: ChatRoomPageProps) {
             messages.map((message) => {
               const isMine = user.id === message.writerId;
               const writerName =
-                message.writerName ?? `사용자 ${message.writerId}`;
+                writerProfiles[message.writerId] ??
+                message.writerName ??
+                `사용자 ${message.writerId}`;
 
               return (
                 <div
@@ -500,9 +684,7 @@ export default function ChatRoomPage({ user }: ChatRoomPageProps) {
                         {getAvatarText(writerName)}
                       </div>
 
-                      <span className="chat-message-name">
-                        {message.writerName}
-                      </span>
+                      <span className="chat-message-name">{writerName}</span>
                     </div>
                   )}
 
