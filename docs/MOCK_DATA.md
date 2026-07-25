@@ -9,12 +9,8 @@
 ## 1. 로그인 사용자 하드코딩 — `src/App.tsx` ✅ **해결 완료**
 **해결**: 초기 `user`를 `null`로 두고, 앱 시작 시 access token이 있으면 `getMyProfile()`(`apis/userApi.ts`)로 복원하도록 실연동함(TODO 2.4). 복원 중에는 `.app-loading`으로 라우트 렌더를 게이트한다. 또한 요청 중 세션 만료(재발급 실패) 시 `apiClient`가 `AUTH_SESSION_EXPIRED_EVENT`를 발행하고 `App`이 로그아웃 + 로그인 모달로 대응한다. 더 이상 "항상 로그인됨"으로 보이지 않는다.
 
-## 2. 가격 알림 전체가 목 — `src/pages/PriceAlertsPage/PriceAlertsPage.tsx`
-가장 미완성 영역. api 모듈 자체가 없다.
-- **마켓 목록 하드코딩**: `markets` 배열(BTC/ETH/XRP/SOL/DOGE 5종). → 백엔드 마켓 목록 API로 교체(존재 여부 `docs/API_CONTRACT.md`에서 확인 필요).
-- **저장된 설정 목 데이터**: `mockSavedSettings`. → 마운트 시 `GET /price-alerts/me` 조회로 교체.
-- **저장이 스텁**: `handleSubmit` 안에서 실제 저장 대신 `console.log('save price alert settings:', requestBody)` + 주석 처리된 `fetch` 예시. 저장 성공을 **로컬에서 흉내**냄(`convertFormToSavedSettings`). → `PUT /price-alerts/me` 실제 호출로 교체.
-- **해야 할 일**: `src/apis/priceAlertApi.ts` 신규 생성(`getMyPriceAlertSettings`, `updateMyPriceAlertSettings`) → `apiClient` 사용. 요청 바디 diff 계산 로직(`priceAlertMapper.convertFormToRequest`)은 이미 완성됨, 재사용.
+## 2. 가격 알림 전체가 목 — `src/pages/PriceAlertsPage/PriceAlertsPage.tsx` ✅ **해결 완료**
+**해결**: `src/apis/priceAlertApi.ts` 신규 생성(`getMarkets`·`getMyPriceAlertSettings`·`updateMyPriceAlertSettings`, 모두 `apiClient`). 마운트 시 `GET /markets`(활성 마켓)와 `GET /price-alerts/me`(내 설정)를 병렬 조회해 폼 구성(하드코딩 `markets`·`mockSavedSettings` 제거). 저장은 `PUT /price-alerts/me`(스텁 `console.log` 제거)로 실제 호출하고 성공(204) 후 로컬 동기화. 조회 실패 시 `loadError`로 "다시 시도" 카드 표시. 요청 바디 diff(`convertFormToRequest`)·퍼센트↔비율 변환은 기존 매퍼 재사용, 마켓 응답 변환은 `mapMarketResponseToPriceAlertMarket`(백엔드 `marketCode`→화면 `code`).
 
 ## 3. 내 채팅방 목 폴백 — `src/pages/MyChatRoomPage/MyChatRoomPage.tsx` ✅ **해결 완료**
 **해결**: `mockMyChatRooms` 상수 삭제. 조회 실패(catch) 시 목 대신 빈 목록 + `loadError` 상태로 전환해 "불러오지 못했습니다 + 다시 시도" 카드를 렌더(재시도는 `reloadKey`로 재조회). 성공 시 `loadError` 해제. 실패가 더 이상 가짜 데이터로 가려지지 않는다.
@@ -47,10 +43,8 @@
 - 프로필 수정 (`ProfileEditPage` → `updateMyProfile`)
 - OAuth2 로그인/로그아웃/토큰 재발급 (`LoginModal`, `authApi`, `apiClient` 인터셉터)
 - **App 로그인 사용자 실연동**(위 1번 해결) — 초기 프로필 복원 + 세션 만료 대응
+- **가격 알림 조회/저장**(위 2번 해결) — `PriceAlertsPage` → `priceAlertApi`(마켓·설정·저장)
 
-## 연동 순서 제안
-1. ~~**App 사용자 실연동**(1번)~~ — ✅ 완료(다른 모든 로그인 상태 판정의 기반).
-2. **가격 알림 api 모듈 + 연동**(2번) — 신규 파일 필요, 범위가 가장 큼.
-3. **내 채팅방 목 폴백 제거**(3번) — 한 줄 교체.
-4. **채팅방 제목**(4번) — 라우팅/상세 API 결정 필요.
-5. **알림 스트림 + HomePage**(5·6번) — 백엔드 알림 채널 확인 후.
+## 남은 목/미연동 (연동 순서 제안)
+1. ~~App 사용자 실연동(1번)~~ · ~~가격 알림(2번)~~ · ~~내 채팅방 목 폴백(3번)~~ · ~~채팅방 제목(4번)~~ — ✅ 모두 완료.
+2. **알림 실시간 수신 + HomePage 콘텐츠**(5·6번) — 백엔드 알림 채널(`API_CONTRACT.md` §4, STOMP `/user/topic/notification/`) 구독 연결. **유일하게 남은 목 영역.**

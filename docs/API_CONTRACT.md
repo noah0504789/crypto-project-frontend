@@ -33,6 +33,9 @@
 | 활동 보고 | `PUT /chat/room/{roomId}/activity` | `lastMsgReadSeq, lastMsgCreatedAtMs` | 204 |
 | 내 프로필 | `GET /user/me` | — | 200·304 |
 | 타 유저 프로필 | `GET /user/{userId}/profile` | — | 2xx |
+| 마켓 목록 | `GET /markets` | — | 200 |
+| 내 가격 알림 조회 | `GET /price-alerts/me` | — | 200 |
+| 내 가격 알림 저장 | `PUT /price-alerts/me` | `{ creates[], updates[], deletes[] }` | 204 |
 | 토큰 재발급 | `POST /auth/refresh` | 빈 body, 쿠키 | 201 + `Authorization` 헤더 |
 | 로그아웃 | `POST /auth/logout` | Bearer | 2xx |
 
@@ -82,16 +85,16 @@
 
 `items`는 **최신순(newest-first)**으로 온다(백엔드 확인). 프론트는 `reverse()` 후 오래된→최신 순으로 렌더한다(`ChatRoomPage`). 이전 메시지 커서 로딩은 첫 항목 커서로 요청. 백엔드 근거: `chat-adapter-out/.../persistence/MongoChatMessageAdapter.listLatestMessages`(첫 페이지, `Sort DESC createdAt, DESC _id`) + `MongoChatMessageRepositoryImpl.listMessagesBefore`(커서, `desc(createdAt), desc(_id)`).
 
-### 가격 알림 (아직 api 모듈 없음 — 연동 시 신규 생성 필요)
-타입은 `types/priceAlert.ts`에 정의됨. 기대 계약:
-| 동작 | 요청 | 응답 |
+### 가격 알림 (`apis/priceAlertApi.ts`) — 백엔드 확인·연동 완료
+| 프론트 | 요청 | 응답 |
 | --- | --- | --- |
-| 내 설정 조회 | `GET /price-alerts/me` | `GetMyPriceAlertSettingsResponse { settings: PriceAlertSetting[] }` |
-| 내 설정 저장 | `PUT /price-alerts/me` `UpdateMyPriceAlertSettingsRequest { creates[], updates[], deletes[] }` | - |
-| 마켓 목록 조회 | 확인 필요(현재 프론트 하드코딩) | `PriceAlertMarket[]` 형태 |
+| `getMarkets()` | `GET /markets` | `MarketResponse[] { id, marketCode, symbol, koreanName, englishName }` → `mapMarketResponseToPriceAlertMarket`로 `code=marketCode` 매핑 |
+| `getMyPriceAlertSettings()` | `GET /price-alerts/me` | `{ settings: [{ code, enabled, targetChangeRate }] }`(`targetChangeRate`는 BigDecimal→JSON 숫자) |
+| `updateMyPriceAlertSettings(req)` | `PUT /price-alerts/me` `{ creates[], updates[], deletes[] }` | **204**. create/update 항목 `{ code, enabled, targetChangeRate }`, delete 항목 `{ code }` |
 
-- `targetChangeRate`는 **비율**(0.03 = 3%). 화면 퍼센트("3")↔비율 변환은 `priceAlertMapper.ts`.
-- 백엔드 컨트롤러: `market/market-adapter-in/.../PriceAlertSettingController.java` (경로/DTO 실제 확인 필요).
+- `targetChangeRate`는 **비율**(0.03 = 3%). 화면 퍼센트("3")↔비율 변환은 `priceAlertMapper.ts`. 백엔드 검증: `0.01 ≤ targetChangeRate ≤ 1.00`(`@DecimalMin`/`@DecimalMax`).
+- 사용자 식별은 게이트웨이가 넣는 `X-User-Id`(UUID publicId)로 서버가 판단 → 프론트는 `apiClient`(Bearer)만 쓰면 된다.
+- 백엔드 근거: `market/market-adapter-in/.../web/{MarketController,PriceAlertSettingController}.java`, DTO `MarketResponse`·`MyPriceAlertSettingsResponse`·`PriceAlertSettingChangeRequest`.
 
 ## 3. STOMP (`apis/chatStompApi.ts`, `stompClient.ts`)
 

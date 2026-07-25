@@ -136,19 +136,21 @@
 ### `/price-alerts` — PriceAlertsPage (`pages/PriceAlertsPage/PriceAlertsPage.tsx`)
 - **역할**: 코인별 가격 변화율 알림 **설정**(수신은 아래 [알림](#4-알림-notification) 카테고리).
 - **기능**:
+  - 마운트 시 `getMarkets`(활성 마켓)·`getMyPriceAlertSettings`(내 설정)를 병렬 조회해 폼 구성.
   - 마켓 추가 모달(멀티 선택) → 폼에 카드 추가.
   - 카드별: 알림 on/off, 변화율 기준 선택(3%/5%/7%), 삭제 표시.
   - "처음상태"(미저장 변경 되돌리기), "내 알람 설정하기"(저장).
-  - 저장 요청은 현재 폼과 저장본을 비교해 **creates/updates/deletes로 diff**(`priceAlertMapper.convertFormToRequest`).
+  - 저장은 현재 폼과 저장본을 비교해 **creates/updates/deletes로 diff**(`convertFormToRequest`) → `updateMyPriceAlertSettings`(`PUT /price-alerts/me`).
 - **데이터 규칙**: 화면은 퍼센트("3"), 서버는 비율(0.03). 변환은 `priceAlertMapper`.
+- **API**: `getMarkets`, `getMyPriceAlertSettings`, `updateMyPriceAlertSettings`(`apis/priceAlertApi.ts`).
 - **플로우**:
   ```
   미로그인 → 안내 카드
+  마운트 → getMarkets + getMyPriceAlertSettings(병렬) → 폼 구성 (실패 시 loadError 카드+다시 시도)
   알림 추가 → 모달에서 코인 선택 → 폼에 카드 추가
   카드 편집(on/off, 변화율, 삭제 표시) → hasUnsavedChanges 계산
-  저장 → diff 계산 → (변경 없으면 alert) → 저장 → 폼/저장본 동기화
+  저장 → diff 계산 → (변경 없으면 alert) → PUT /price-alerts/me → 성공(204) 후 폼/저장본 로컬 동기화
   ```
-- ⚠️ **전체가 목**: 마켓 목록 하드코딩, 저장 설정 `mockSavedSettings`, 저장이 `console.log` 스텁(실제 PUT 미호출), **api 모듈 없음** — `MOCK_DATA.md` 2번(범위 가장 큼).
 - **로그인 필요**: O.
 
 > **연관**: 여기서 설정한 기준을 넘으면 백엔드가 `UpbitTickerAlertEvent`를 보내고, 그것이 [알림](#4-알림-notification)으로 표시되는 것이 최종 설계다(수신 연동은 아직 없음).

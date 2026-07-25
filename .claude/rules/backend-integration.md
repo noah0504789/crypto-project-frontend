@@ -12,7 +12,7 @@
 
 ## 진행 규칙
 - 컴포넌트에서 직접 `fetch`/`axios` 쓰지 말고 `src/apis/{domain}Api.ts`에 함수를 만든다(`apiClient` 사용 → 토큰/401 재발급 자동).
-- 신규 api 모듈이 필요한 대표 사례: **가격 알림**(`priceAlertApi.ts` 없음). `getMyPriceAlertSettings`, `updateMyPriceAlertSettings`를 만들고, 요청 바디 diff는 기존 `priceAlertMapper.convertFormToRequest`를 재사용.
+- 신규 api 모듈 추가의 참고 예: **가격 알림**(`priceAlertApi.ts` — `getMarkets`/`getMyPriceAlertSettings`/`updateMyPriceAlertSettings`, 연동 완료). 서버 타입은 `types/priceAlert.ts`, 변환은 `priceAlertMapper.ts`(diff `convertFormToRequest`, 마켓 `mapMarketResponseToPriceAlertMarket`)에 두고 컴포넌트는 화면 모델만 다루는 구조를 따른다.
 - 목 상수(`mockMyChatRooms`, `mockSavedSettings`, `markets` 하드코딩, `roomTitle` 등)와 테스트 스텁(`handleMockAlert`, `console.log` 저장)은 **연동 완료 후 제거**한다. 남기면 실패 시 목이 떠서 디버깅을 방해한다.
 - 한 번에 한 대상만 교체하고 각 단계 후 `npm run build`(타입 체크)로 검증.
 

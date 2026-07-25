@@ -8,9 +8,10 @@ React SPA를 실제 API Gateway에 붙이기 위한 **레거시(js+html) → Rea
 
 레거시 이식은 끝났고, 남은 건 아직 목/스텁으로 동작하는 신규 영역이다. 대상·절차는 `docs/MOCK_DATA.md`에서 관리한다.
 
-- **가격 알림 전체**(api 모듈 신규 생성 필요) — `MOCK_DATA.md` §2
 - **알림 실시간 수신 연결**(STOMP `/user/topic/notification/` 구독) — `MOCK_DATA.md` §5 · 계약 `API_CONTRACT.md` §4
 - **HomePage 실제 콘텐츠** — `MOCK_DATA.md` §6
+
+가격 알림(§2)은 백엔드 연동 완료 → 목록에서 제거됨.
 
 ## 참고 (현재 React 파일 배치 · 관련 문서)
 
