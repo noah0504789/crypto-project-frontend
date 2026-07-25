@@ -8,8 +8,8 @@ React SPA를 실제 API Gateway에 연동하기 위한 작업 목록. 근거는 
 
 ## 진행 현황(요약)
 
-- **완료**: 인증 배관 2.1(apiClient refresh)·2.2(LoginSuccessPage)·2.3(로그인 시작/로그아웃), STOMP 핸드셰이크 3.1, 채팅 실시간 핵심 4.1(낙관적 전송)·4.2(ACK)·4.4(브로드캐스트+중복제거)·4.6(이전 메시지 로딩).
-- **남은 핵심**: **2.4 앱 초기 사용자 로딩**(현재 `App.tsx`가 `user`를 하드코딩 — 모든 화면이 "로그인됨"으로 보임, MOCK_DATA #1).
+- **완료**: **인증 흐름 §2 전체**(2.1 apiClient refresh + 세션 만료 이벤트, 2.2 LoginSuccessPage, 2.3 로그인 시작/로그아웃, 2.4 앱 초기 사용자 로딩), STOMP 핸드셰이크 3.1, 채팅 실시간 핵심 4.1(낙관적 전송)·4.2(ACK)·4.4(브로드캐스트+중복제거)·4.6(이전 메시지 로딩).
+- **남은 핵심**: 채팅 §4 마감(4.3·4.5·4.7·4.8·4.9). 그 외 가격 알림·홈·알림 실시간은 `docs/MOCK_DATA.md` §2·5·6.
 - **부분/미완**: 4.3 ACK 3초 타임아웃(재전송만 있음), 4.5 방 상세(제목/msgCnt) 미조회(`roomTitle` 하드코딩, MOCK_DATA #4), 4.7 활동/읽음 보고, 4.8 아바타 프로필 캐시 페이지 연결, 4.9 배지 목록 재정렬/미존재 방 prepend.
 
 ---
@@ -27,7 +27,7 @@ React SPA를 실제 API Gateway에 연동하기 위한 작업 목록. 근거는 
 
 - [x] **2.1 401 single-flight refresh + 재시도 + 로그인 리다이렉트** — `src/apis/apiClient.ts`
   - **완료**: single-flight(`refreshAccessTokenOnce`)·원요청 재시도(`_retry`)·실패 시 `removeAccessToken` + `saveRedirectAfterLogin`(현재 경로 저장). refresh 요청은 인터셉터 없는 별도 `authClient`로 분리해 무한루프 차단.
-  - **남음(페이지)**: 이 앱은 `/login` 라우트가 없고 로그인이 **모달**(`App.tsx`/`Header`)이라, 재발급 실패 후 실제 로그인 유도(모달 열기/`setUser(null)`)는 §2.4 앱 사용자 실연동 때 연결.
+  - **완료(페이지 연결)**: `/login` 라우트가 없고 로그인이 **모달**이라, 재발급 실패 시 `handleRefreshFailure`가 `AUTH_SESSION_EXPIRED_EVENT`를 발행 → `App`이 `setUser(null)` + 로그인 모달 오픈으로 연결(§2.4).
   - 401 → refresh 1회(single-flight, `_retry`) → 원요청 재시도. refresh 경로 자체 401/재시도 초과 → 토큰 제거 + 돌아올 URL 저장 + 로그인 페이지.
   - refresh 경로/응답 계약은 API_CONTRACT §2(정정 완료). 남은 건 single-flight·redirect 처리.
   - 레거시 참고(`auth-api.js`):
@@ -80,9 +80,9 @@ React SPA를 실제 API Gateway에 연동하기 위한 작업 목록. 근거는 
   - **완료**: 시작 `getOAuthLoginUrl(provider)`는 `LoginModal`의 소셜 버튼 `href`로 연결, 로그아웃 `logout()`(`POST /auth/logout`)는 `App.handleLogout`에서 호출 → `removeAccessToken`·`setUser(null)`·`setNotifications([])`·`navigate('/')`.
   - 경로 계약(`/oauth2/authorization/{google|kakao}`, `POST /auth/logout`)은 API_CONTRACT §2 인증.
 
-- [ ] **2.4 앱 초기 사용자 로딩** — `src/App.tsx` ⚠️ **미착수 · 남은 인증 핵심**
-  - 현재 `useState<User | null>`의 초기값이 하드코딩(`noah`)이라 토큰과 무관하게 항상 "로그인됨"으로 보인다(MOCK_DATA #1).
-  - 초기 `user`를 `null`로 두고, 토큰 있으면 `getMyProfile()`(`GET /user/me`, 이미 존재)로 채운다. 2.1 재발급 실패 후 로그인 유도(§2.1 남음)도 이 작업과 함께 연결.
+- [x] **2.4 앱 초기 사용자 로딩** — `src/App.tsx`
+  - **완료**: 초기 `user`를 `null`로, `isInitializingUser`는 토큰 유무로 lazy init(`useState(() => getAccessToken() !== null)`). 마운트 `useEffect`에서 토큰 있으면 `getMyProfile()`(`GET /user/me`)로 복원(`isCancelled` 취소 가드), 실패 시 로그아웃 상태 확정. 복원 중에는 `.app-loading`으로 라우트 렌더를 게이트해 "로그인됨↔안됨" 깜빡임 방지.
+  - **2.1 남음 연결(세션 만료)**: `apiClient`가 재발급 실패 시 `AUTH_SESSION_EXPIRED_EVENT`(window 이벤트) 발행 → `App`이 수신해 `setUser(null)` + 알림 초기화 + 로그인 모달 오픈. `apiClient`(비-React)를 React 상태에 연결하는 다리.
 
 ---
 

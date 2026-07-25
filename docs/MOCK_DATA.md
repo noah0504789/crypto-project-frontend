@@ -6,14 +6,8 @@
 
 ---
 
-## 1. 로그인 사용자 하드코딩 — `src/App.tsx`
-**현재**: `useState<User | null>`의 초기값이 실제 로그인 상태와 무관하게 하드코딩됨.
-```ts
-const [user, setUser] = useState<User | null>({
-  id: "1", nickname: "noah", email: "noah0969@gmail.com", profileImageUrl: "",
-});
-```
-**연동**: 초기값을 `null`로 바꾸고, 앱 시작 시 access token이 있으면 `getMyProfile()`(`apis/userApi.ts`)로 사용자 정보를 조회해 `setUser`. 토큰 없으면 로그아웃 상태 유지. 이걸 바꾸기 전까지 "항상 로그인된 것처럼" 보인다.
+## 1. 로그인 사용자 하드코딩 — `src/App.tsx` ✅ **해결 완료**
+**해결**: 초기 `user`를 `null`로 두고, 앱 시작 시 access token이 있으면 `getMyProfile()`(`apis/userApi.ts`)로 복원하도록 실연동함(TODO 2.4). 복원 중에는 `.app-loading`으로 라우트 렌더를 게이트한다. 또한 요청 중 세션 만료(재발급 실패) 시 `apiClient`가 `AUTH_SESSION_EXPIRED_EVENT`를 발행하고 `App`이 로그아웃 + 로그인 모달로 대응한다. 더 이상 "항상 로그인됨"으로 보이지 않는다.
 
 ## 2. 가격 알림 전체가 목 — `src/pages/PriceAlertsPage/PriceAlertsPage.tsx`
 가장 미완성 영역. api 모듈 자체가 없다.
@@ -59,9 +53,10 @@ const [user, setUser] = useState<User | null>({
 - 내 채팅방 뱃지 실시간 (`MyChatRoomPage`, STOMP)
 - 프로필 수정 (`ProfileEditPage` → `updateMyProfile`)
 - OAuth2 로그인/로그아웃/토큰 재발급 (`LoginModal`, `authApi`, `apiClient` 인터셉터)
+- **App 로그인 사용자 실연동**(위 1번 해결) — 초기 프로필 복원 + 세션 만료 대응
 
 ## 연동 순서 제안
-1. **App 사용자 실연동**(1번) — 다른 모든 로그인 상태 판정의 기반.
+1. ~~**App 사용자 실연동**(1번)~~ — ✅ 완료(다른 모든 로그인 상태 판정의 기반).
 2. **가격 알림 api 모듈 + 연동**(2번) — 신규 파일 필요, 범위가 가장 큼.
 3. **내 채팅방 목 폴백 제거**(3번) — 한 줄 교체.
 4. **채팅방 제목**(4번) — 라우팅/상세 API 결정 필요.

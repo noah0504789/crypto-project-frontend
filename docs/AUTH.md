@@ -6,11 +6,11 @@
 | 파일 | 역할 |
 | --- | --- |
 | `src/apis/authApi.ts` | OAuth2 로그인 URL 생성, 로그아웃 요청 |
-| `src/apis/apiClient.ts` | 요청에 토큰 자동 첨부 + 401 시 자동 재발급/재시도 |
+| `src/apis/apiClient.ts` | 요청에 토큰 자동 첨부 + 401 시 자동 재발급/재시도 + 재발급 실패 시 세션 만료 이벤트 발행 |
 | `src/utils/authStorage.ts` | access token / 로그인 후 이동경로를 `sessionStorage`에 저장 |
 | `src/pages/LoginSuccessPage/LoginSuccessPage.tsx` | OAuth2 리다이렉트 착지 → 토큰 저장 → 원경로 복귀 |
 | `src/components/Modal/LoginModal.tsx` | 소셜 로그인 버튼(구글/카카오) |
-| `src/App.tsx` | 로그아웃 처리, 로그인 사용자 상태 보유 |
+| `src/App.tsx` | 앱 시작 시 사용자 복원(`getMyProfile`), 세션 만료 이벤트 처리, 로그아웃, 로그인 사용자 상태 보유 |
 | `src/apis/stompClient.ts` | WebSocket 핸드셰이크 URL 쿼리(`?access_token=`)로 토큰 전달 |
 
 토큰 방식: **access token은 프론트가 `sessionStorage`로 보관**하고, **refresh token은 백엔드가 관리하는 쿠키**(httpOnly 추정)로 다룬다. 그래서 axios 인스턴스는 모두 `withCredentials: true`.
@@ -53,7 +53,7 @@ export async function logout() {
    - 있으면 `setAccessToken(token)`으로 `sessionStorage` 저장.
    - `consumeRedirectAfterLogin()`으로 "로그인 전에 가려던 경로"를 꺼내 그곳으로 이동(없으면 `/`).
 
-> 로그인 후 사용자 정보(`user`) 채우기는 **현재 미구현**이다. `App.tsx`가 사용자를 하드코딩하고 있어서(`docs/MOCK_DATA.md` 1번), 실연동 시 이 시점 또는 앱 시작 시 `getMyProfile()` 호출로 연결해야 한다.
+> 사용자 정보(`user`) 채우기는 **앱 시작 시** 처리한다: `App.tsx`가 마운트 시 토큰이 있으면 `getMyProfile()`로 `user`를 복원한다(§6). 따라서 로그인 직후에는 `LoginSuccessPage`가 원경로로 복귀하고, 그 화면에서 `App`의 초기화 로직이 프로필을 채운다.
 
 ### 2) 인증된 요청 (요청 인터셉터) — `apiClient.ts`
 모든 `apiClient` 요청에 토큰을 자동으로 붙인다.
@@ -84,7 +84,7 @@ apiClient.interceptors.request.use((config) => {
 - `_retry` 플래그로 **무한 재시도 방지**(재발급 후에도 401이면 한 번 더 시도하지 않음).
 - 재발급 요청은 별도 인스턴스 `authClient`로 보낸다(요청 인터셉터가 없어 만료된 토큰을 붙이지 않기 위함).
 - `/auth/refresh` 자체가 401이면 재귀 방지를 위해 건너뛴다.
-- 재발급 실패 시 토큰을 지우고 **돌아올 경로만 저장**(`saveRedirectAfterLogin`)한다. **화면 리다이렉트는 하지 않는다** → 각 페이지가 `user === null`로 안내(로그인 모달 유도)를 처리.
+- 재발급 실패 시 토큰을 지우고 **돌아올 경로를 저장**(`saveRedirectAfterLogin`)한 뒤, **`AUTH_SESSION_EXPIRED_EVENT`(window 이벤트)를 발행**한다(`handleRefreshFailure`). `apiClient`는 컴포넌트가 아니라 직접 리다이렉트/모달을 못 열기 때문에, 이 이벤트를 `App`이 받아 `setUser(null)` + 알림 초기화 + 로그인 모달 오픈으로 처리한다(§6).
 - 경로·응답 계약은 `docs/API_CONTRACT.md` §2 인증.
 
 ### 4) 로그아웃 — `App.handleLogout`
@@ -108,6 +108,38 @@ new SockJS(`${GATEWAY_URL}/ws?access_token=${getAccessToken()}`);
 ```
 - 단, STOMP에는 axios 같은 **401 자동 재발급 로직이 없다.** 연결 시점의 토큰이 만료됐다면 재연결(`reconnectDelay: 5000`)만 반복될 수 있다. (개선 여지)
 
+### 6) 앱 시작 시 사용자 복원 + 세션 만료 처리 — `App.tsx`
+새로고침/재방문 시 로그인 상태를 되살리고, 요청 중 세션이 끊기면 로그아웃으로 전환한다.
+```ts
+// 초기값: 토큰이 있으면 "복원 중"(로딩 게이트 on)
+const [user, setUser] = useState<User | null>(null);
+const [isInitializingUser, setIsInitializingUser] = useState(
+  () => getAccessToken() !== null,
+);
+
+// 마운트 시 토큰 있으면 프로필 복원(취소 가드)
+useEffect(() => {
+  if (!getAccessToken()) return;
+  let isCancelled = false;
+  (async () => {
+    try { const p = await getMyProfile(); if (!isCancelled) setUser(p); }
+    catch { if (!isCancelled) setUser(null); }        // 401→재발급 실패면 apiClient가 토큰 정리
+    finally { if (!isCancelled) setIsInitializingUser(false); }
+  })();
+  return () => { isCancelled = true; };
+}, []);
+
+// 세션 만료 이벤트 → 로그아웃 + 로그인 유도
+useEffect(() => {
+  const onExpired = () => { setUser(null); setNotifications([]); setIsLoginModalOpen(true); };
+  window.addEventListener(AUTH_SESSION_EXPIRED_EVENT, onExpired);
+  return () => window.removeEventListener(AUTH_SESSION_EXPIRED_EVENT, onExpired);
+}, []);
+```
+- **로딩 게이트**: `isInitializingUser` 동안 `<main>`은 라우트 대신 `.app-loading`을 렌더한다. 복원 전에 `user===null`로 보여 "로그인 안내"가 깜빡였다가 콘텐츠로 바뀌는 것을 막는다.
+- 토큰이 **없으면** 처음부터 `isInitializingUser=false`라 게이트 없이 로그아웃 상태로 시작한다.
+- 세션 만료 이벤트의 출처는 §3 재발급 실패(`handleRefreshFailure`).
+
 ---
 
 ## 토큰 저장소 — `authStorage.ts`
@@ -126,6 +158,7 @@ new SockJS(`${GATEWAY_URL}/ws?access_token=${getAccessToken()}`);
 요청/응답 계약(소셜 로그인·재발급·로그아웃 경로와 응답 형태)의 정본은 **`docs/API_CONTRACT.md` §2 인증**이다. 이 문서는 프론트 구현 흐름만 다룬다.
 
 ## 확인/개선 여지 (실연동 시 검토)
-- 로그인 성공 후 `getMyProfile()`로 `user` 채우기 연결(현재 하드코딩).
+- ~~로그인 성공 후 `getMyProfile()`로 `user` 채우기~~ → ✅ §6에서 앱 시작 시 복원으로 구현.
 - STOMP 연결 토큰 만료 시 재발급 전략 부재.
+- 세션 만료 시 모달 자동 오픈이 과할 수 있음(백그라운드 401에도 열림) — 필요 시 사용자 액션 기반으로 조정 검토.
 - refresh 토큰의 실제 저장 방식(쿠키 속성)과 `/auth/refresh`가 참조하는 자격증명 — 백엔드(`oauth2-*`, gateway) 대조.
