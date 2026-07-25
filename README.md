@@ -2,7 +2,7 @@
 
 `crypto-project` 백엔드(Spring Cloud MSA)의 프론트엔드. **React 19 · TypeScript · Vite** 기반 SPA로 가상화폐 오픈채팅, 가격 알림, 계정/프로필 관리를 제공한다. 모든 REST/WebSocket 요청은 API Gateway 한 곳(`VITE_GATEWAY_URL`)으로 나간다.
 
-> **현재 상태: 완성된 UI + 부분 목(mock) 상태.** 실제 백엔드 연동은 다음 단계다. 어디가 목이고 무엇을 갈아끼워야 하는지는 반드시 [`docs/MOCK_DATA.md`](docs/MOCK_DATA.md)를 먼저 확인한다. 이 목록을 모르면 "이미 연동된 것처럼 보이는데 실제로는 목"인 지점을 놓친다.
+> **현재 상태: 백엔드 실연동 완료.** 인증·채팅(REST/STOMP)·가격 알림·실시간 알림 수신이 모두 실제 API Gateway에 연결돼 있다(목/스텁 제거됨). 남은 것은 제품 콘텐츠(HomePage)와 선택적 개선 항목뿐 — `TODO.md` 참고.
 
 ## 주요 기능
 
@@ -68,7 +68,6 @@ src/
 - [`docs/UTILITIES.md`](docs/UTILITIES.md) — `src/utils` 순수 함수/매퍼 레퍼런스
 - [`docs/AUTH.md`](docs/AUTH.md) — 인증 구현(토큰·인터셉터·OAuth2 흐름)
 - [`docs/API_CONTRACT.md`](docs/API_CONTRACT.md) — 백엔드 REST/STOMP 계약(**계약 값의 정본**)
-- [`docs/MOCK_DATA.md`](docs/MOCK_DATA.md) — 목/스텁 교체 대상(실연동 단계)
 - [`TODO.md`](TODO.md) — 백엔드 실연동 작업 목록
 - [`.claude/rules/code-style.md`](.claude/rules/code-style.md) — 코드 스타일 규칙
 - [`.claude/rules/backend-integration.md`](.claude/rules/backend-integration.md) — 목 → 실연동 규칙

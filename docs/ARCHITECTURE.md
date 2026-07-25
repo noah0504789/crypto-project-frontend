@@ -125,4 +125,4 @@ ChatPage(useEffect)
 | 재사용 UI | `components/Xxx/` |
 | 전역으로 공유할 상태 | 신중히. 우선 상위 페이지 지역 상태 → 정말 전역이면 `App.tsx` |
 
-세부 규칙은 `.claude/rules/code-style.md`, 목→실연동은 `.claude/rules/backend-integration.md` + `docs/MOCK_DATA.md`.
+세부 규칙은 `.claude/rules/code-style.md`, 백엔드 연동은 `.claude/rules/backend-integration.md`.

@@ -16,10 +16,9 @@ React 19 · TypeScript · Vite 기반 SPA. `crypto-project` 백엔드(Spring Clo
 - `docs/UTILITIES.md` — `src/utils` 순수 함수/매퍼 레퍼런스
 - `docs/AUTH.md` — 인증 구현(토큰·인터셉터·OAuth2 흐름)
 - `docs/API_CONTRACT.md` — 백엔드 REST/STOMP 계약(**계약 값의 정본**)
-- `docs/MOCK_DATA.md` — 목/스텁 교체 대상(실연동 단계)
-- `TODO.md` — 백엔드 실연동 작업 목록(레거시 실동작 코드 + 백엔드 확인 근거·정정값 포함, 항목별 자체 완결)
+- `TODO.md` — 남은 작업(백엔드 실연동은 모두 완료, 개선 여지·제품 과제만 남음)
 
-> **현재 상태: 완성된 UI + 부분 목(mock) 상태.** 실제 백엔드 연동은 다음 단계다. 어디가 목이고 무엇을 갈아끼워야 하는지는 반드시 `docs/MOCK_DATA.md`를 먼저 확인한다. 이 목록을 모르고 코드를 고치면 "이미 연동된 것처럼 보이는데 실제로는 목"인 지점을 놓친다.
+> **현재 상태: 백엔드 실연동 완료.** 인증·채팅(REST/STOMP)·가격 알림·실시간 알림 수신이 모두 실제 게이트웨이에 연결돼 있다(목/스텁 제거됨). 새 기능은 기존 연동 패턴(`apis/*` + `types/*` + `utils/*Mapper.ts`)을 따른다.
 
 ## 명령어
 ```bash
@@ -37,7 +36,7 @@ npm run preview  # 빌드 결과 미리보기
 | 작업 | 읽을 규칙 |
 | --- | --- |
 | 컴포넌트/페이지/유틸 작성·수정, 네이밍, 파일 구조 | `.claude/rules/code-style.md` |
-| 목 데이터를 실제 API/STOMP로 교체, 신규 api 모듈 추가 | `.claude/rules/backend-integration.md` + `docs/MOCK_DATA.md` |
+| 신규 백엔드 연동(REST/STOMP) 추가, api 모듈 작성 | `.claude/rules/backend-integration.md` |
 
 ## 작업 절차
 1. 관련 문서/규칙 확인 (`docs/`, `.claude/rules/`)
