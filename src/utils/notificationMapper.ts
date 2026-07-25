@@ -1,27 +1,18 @@
 import type {
   Notification,
-  UpbitTickerAlertEvent,
+  WebNotificationEvent,
 } from '@/types/notification';
 
-export function mapUpbitTickerAlertToNotification(
-  event: UpbitTickerAlertEvent,
+export function mapWebNotificationToNotification(
+  event: WebNotificationEvent,
 ): Notification {
-  const changeRatePercent = (event.changeRate * 100).toFixed(2);
-  const price = event.price.toLocaleString();
-
   return {
-    id: event.timestamp,
-    title: `${event.code} 가격 변동 알림`,
-    message: `${event.code} 가격이 ${changeRatePercent}% 변동했습니다. 현재가 ${price}원`,
-    createdAt: new Date(event.timestamp).toISOString(),
+    // wire에 id가 없어 createdAtMs를 식별자로 쓴다(읽음 토글·React key용).
+    id: event.createdAtMs,
+    title: event.title,
+    message: event.body,
+    link: event.link ? event.link : undefined,
+    createdAt: new Date(event.createdAtMs).toISOString(),
     read: false,
-    messageParts: [
-      { text: event.code, bold: true },
-      { text: ' 가격이 ' },
-      { text: `${changeRatePercent}%`, bold: true },
-      { text: ' 변동했습니다.', lineBreakAfter: true },
-      { text: '현재가 ' },
-      { text: `${price}원`, bold: true },
-    ],
   };
 }

@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { Routes, Route, useNavigate, Navigate } from "react-router-dom";
 import type { User } from "@/types/user";
-import type { Notification, UpbitTickerAlertEvent } from "@/types/notification";
+import type { Notification } from "@/types/notification";
 import { AUTH_SESSION_EXPIRED_EVENT } from "@/apis/apiClient";
 import { logout } from "@/apis/authApi";
 import { getMyProfile } from "@/apis/userApi";
-import { mapUpbitTickerAlertToNotification } from "@/utils/notificationMapper";
+import { createStompClient } from "@/apis/stompClient";
+import { subscribeWebNotifications } from "@/apis/notificationStompApi";
+import { mapWebNotificationToNotification } from "@/utils/notificationMapper";
 import { getAccessToken, removeAccessToken } from "@/utils/authStorage";
 import Header from "@/components/Header/Header";
 import LoginModal from "@/components/Modal/LoginModal";
@@ -86,6 +88,32 @@ export default function App() {
     };
   }, []);
 
+  // 로그인 상태면 실시간 알림(STOMP /user/topic/notification/)을 구독한다.
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+
+    const client = createStompClient();
+
+    client.onConnect = () => {
+      subscribeWebNotifications(client, (event) => {
+        const notification = mapWebNotificationToNotification(event);
+
+        setNotifications((prevNotifications) => [
+          notification,
+          ...prevNotifications,
+        ]);
+      });
+    };
+
+    client.activate();
+
+    return () => {
+      void client.deactivate();
+    };
+  }, [user]);
+
   function handleOpenLoginModal() {
     setIsLoginModalOpen(true);
   }
@@ -108,15 +136,6 @@ export default function App() {
     }
   }
 
-  function handleReceiveUpbitTickerAlert(event: UpbitTickerAlertEvent) {
-    const notification = mapUpbitTickerAlertToNotification(event);
-
-    setNotifications((prevNotifications) => [
-      notification,
-      ...prevNotifications,
-    ]);
-  }
-
   function handleReadNotification(notificationId: number) {
     setNotifications((prevNotifications) =>
       prevNotifications.map((notification) =>
@@ -128,17 +147,6 @@ export default function App() {
           : notification,
       ),
     );
-  }
-
-  function handleMockAlert() {
-    handleReceiveUpbitTickerAlert({
-      code: "KRW-BTC",
-      price: 145_000_000,
-      timestamp: Date.now(),
-      avgInterval: 60,
-      avgPrice: 142_000_000,
-      changeRate: 0.021,
-    });
   }
 
   return (
@@ -158,10 +166,7 @@ export default function App() {
           </section>
         ) : (
           <Routes>
-            <Route
-              path="/"
-              element={<HomePage onMockAlert={handleMockAlert} />}
-            />
+            <Route path="/" element={<HomePage />} />
             <Route path="/chat" element={<ChatPage user={user} />} />
             <Route path="/chat/my" element={<MyChatRoomPage user={user} />} />
             <Route

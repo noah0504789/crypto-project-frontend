@@ -14,11 +14,13 @@ export type Notification = {
   read: boolean;
 };
 
-export type UpbitTickerAlertEvent = {
-  code: string;
-  price: number;
-  timestamp: number;
-  avgInterval: number;
-  avgPrice: number;
-  changeRate: number;
+// 백엔드 StompWebNotificationPayload. 구독 destination: /user/topic/notification/
+// title/body는 서버가 표시용으로 완성해 보낸다. data는 부가 정보(현재 미사용).
+export type WebNotificationEvent = {
+  type: string;
+  title: string;
+  body: string;
+  createdAtMs: number;
+  link: string | null;
+  data?: Record<string, unknown>;
 };
