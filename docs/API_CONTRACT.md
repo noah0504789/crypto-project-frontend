@@ -120,13 +120,14 @@
 - 실시간 프로토콜(낙관적 전송·ACK 재조정·재시도·중복제거·재구독) 이식 절차와 레거시 코드는 `TODO.md` §3~4.
 - 백엔드 근거: `common/common-core/.../StompDestination.java` — `CHAT_ROOM_PREFIX("/topic/chat/")`, `CHAT_ACK_QUEUE("/queue/chat/ack")`, `CHAT_ROOM_BADGE_QUEUE("/queue/chat/badge")`(user prefix `/user`); `StompController.java` — `@MessageMapping("/chat.send")`.
 
-## 4. 실시간 알림 스트림 (채널 확인 완료 · 프론트 미연결)
+## 4. 실시간 알림 스트림 (연동 완료)
 
 - **채널: STOMP**(SSE 아님). 백엔드가 사용자별로 `convertAndSendToUser(receiverId, "/topic/notification/", payload)`로 보낸다 → 클라이언트 **구독 destination = `/user/topic/notification/`**(user-destination). 로컬 세션이 있는 대상에게만 push.
-- **wire payload** `StompWebNotificationPayload`:
+- **wire payload** `StompWebNotificationPayload` = 프론트 `WebNotificationEvent`:
   ```
   { type: string, title: string, body: string,
-    createdAtMs: number(epoch millis, long), link: string, data: Record<string, unknown> }
+    createdAtMs: number(epoch millis, long), link: string, data?: Record<string, unknown> }
   ```
-- **프론트 현황/할 일**: `types/notification.ts`의 `UpbitTickerAlertEvent`를 받아 `Notification`으로 매핑하는 `notificationMapper`는 있으나 **App에 실시간 구독이 연결돼 있지 않다**(현재 `HomePage` 테스트 버튼 `handleMockAlert`로만 생성). 연동 시 (1) `App`에서 `/user/topic/notification/` 구독을 연결하고, (2) 프론트 타입/매퍼를 위 `StompWebNotificationPayload`(generic 알림: `type/title/body/link/data`) 형태에 맞춰야 한다 — 현재 `UpbitTickerAlertEvent` 가정과 **형태가 다르다**.
+  `title`/`body`는 서버가 표시용으로 완성해 보낸다(프론트에서 재조립 불필요).
+- **프론트 구현**: 로그인 시 `App`이 STOMP로 `/user/topic/notification/` 구독(`apis/notificationStompApi.ts`) → `mapWebNotificationToNotification`으로 `Notification` 변환 → `Header` 벨 드롭다운. `id`는 `createdAtMs` 사용, `link` 있으면 클릭 시 이동.
 - 백엔드 근거: `websocket-gateway-adapter-out/.../notification/adapter/out/stomp/StompWebNotificationAdapter.java`(`convertAndSendToUser`, `NOTIFICATION_PREFIX = "/topic/notification/"`) + `.../stomp/payload/StompWebNotificationPayload.java`. 흐름: `notification`이 Kafka `web-notification-broadcast-event` 발행 → websocket-gateway 소비(`WebNotificationEventMapper` → command) → 위 STOMP 전송.

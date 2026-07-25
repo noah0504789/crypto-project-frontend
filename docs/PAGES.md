@@ -24,9 +24,8 @@
 
 ### `/` — HomePage (`pages/HomePage/HomePage.tsx`)
 - **역할**: 랜딩(메인).
-- **기능**: 현재는 플레이스홀더. `<h1>메인 페이지</h1>` + "테스트 알림 발생" 버튼뿐.
-- **플로우**: 버튼 클릭 → `onMockAlert`(App의 `handleMockAlert`) → 가짜 `UpbitTickerAlertEvent` 생성 → [알림](#4-알림-notification) 드롭다운에 누적.
-- ⚠️ 실제 홈 콘텐츠·실시간 알림 미구현(`MOCK_DATA.md` 5·6번).
+- **기능**: 간단한 안내 문구만 있는 랜딩(테스트 알림 버튼 제거됨). 실시간 알림 수신은 이제 [알림](#4-알림-notification)에서 App STOMP 구독으로 동작한다.
+- ⚠️ 실제 랜딩/대시보드 콘텐츠는 제품 과제(`MOCK_DATA.md` 6번). 목/스텁은 아님.
 - **로그인 필요**: X.
 
 ---
@@ -153,7 +152,7 @@
   ```
 - **로그인 필요**: O.
 
-> **연관**: 여기서 설정한 기준을 넘으면 백엔드가 `UpbitTickerAlertEvent`를 보내고, 그것이 [알림](#4-알림-notification)으로 표시되는 것이 최종 설계다(수신 연동은 아직 없음).
+> **연관**: 여기서 설정한 기준을 넘으면 백엔드가 알림을 보내고, 그것이 STOMP로 [알림](#4-알림-notification) 드롭다운에 표시된다(수신 연동 완료).
 
 ---
 
@@ -161,37 +160,29 @@
 
 **페이지가 아니라 앱 전역 기능**이다. 별도 라우트 없이 `App.tsx`(상태) + `Header`(표시)로 동작한다. 관련: `types/notification.ts`, `utils/notificationMapper.ts`.
 
-- **역할**: 가격 변동 등 서버 이벤트를 헤더 벨(🔔) 드롭다운으로 보여준다.
+- **역할**: 서버가 보내는 실시간 알림을 헤더 벨(🔔) 드롭다운으로 보여준다.
+- **수신**(`App.tsx`): 로그인 상태면 STOMP 클라이언트로 **`/user/topic/notification/`** 구독(`apis/notificationStompApi.ts`의 `subscribeWebNotifications`). 로그아웃/언마운트 시 `deactivate`.
 - **상태 소유**: `App.tsx`의 `notifications: Notification[]`.
-  - `handleReceiveUpbitTickerAlert(event)` — 이벤트를 `Notification`으로 매핑해 목록 **맨 앞에 추가**.
+  - 수신 시 `mapWebNotificationToNotification`으로 매핑해 목록 **맨 앞에 추가**.
   - `handleReadNotification(id)` — 해당 알림 `read: true`로 변경.
-  - 로그아웃 시 `setNotifications([])`로 초기화.
-- **매핑**(`notificationMapper.mapUpbitTickerAlertToNotification`): `UpbitTickerAlertEvent`(code, price, changeRate 등) → `Notification`.
-  - 제목/본문 생성, 변화율은 `%`로, 가격은 천단위 콤마.
-  - `messageParts`로 부분 굵게(`bold`)·줄바꿈(`lineBreakAfter`) 렌더 지원.
+  - 로그아웃/세션 만료 시 `setNotifications([])`로 초기화.
+- **매핑**(`notificationMapper.mapWebNotificationToNotification`): `WebNotificationEvent { type, title, body, createdAtMs, link, data }` → `Notification`. 서버가 `title`/`body`를 완성해 보내므로 그대로 사용, `id`는 `createdAtMs`, `link` 있으면 유지.
 - **표시**(`Header`): 안읽음이 하나라도 있으면 벨에 빨간 점(`hasUnreadNotification`). 드롭다운에서 항목 클릭 시:
   ```
   onReadNotification(id) → read 처리
   notification.link 있으면 → 드롭다운 닫고 navigate(link)
   ```
   바깥 클릭 시 드롭다운 닫힘.
-- **타입**(`types/notification.ts`): `Notification`(id, title, message, messageParts?, link?, createdAt, read), `NotificationMessagePart`, `UpbitTickerAlertEvent`.
-- **플로우(현재)**:
+- **타입**(`types/notification.ts`): `Notification`(id, title, message, messageParts?, link?, createdAt, read), `NotificationMessagePart`, `WebNotificationEvent`.
+- **플로우**:
   ```
-  HomePage "테스트 알림 발생" → handleMockAlert → 가짜 UpbitTickerAlertEvent
-    → handleReceiveUpbitTickerAlert → 매핑 → notifications 맨 앞 추가
-    → Header 벨 점 표시 → 드롭다운에서 확인/읽음
+  백엔드 notification → Kafka → websocket-gateway → convertAndSendToUser(/topic/notification/)
+    → App STOMP 구독 수신 → 매핑 → notifications 맨 앞 추가
+    → Header 벨 점 표시 → 드롭다운에서 확인/읽음(link 있으면 이동)
   ```
-- **플로우(목표)**:
-  ```
-  백엔드 알림 채널(STOMP 등) 구독 → 실제 UpbitTickerAlertEvent 수신
-    → handleReceiveUpbitTickerAlert (동일 경로)
-  ```
-- ⚠️ **미구현/한계** (`MOCK_DATA.md` 5번):
-  - 실시간 수신 **구독이 App에 연결돼 있지 않다**. 지금은 오직 테스트 버튼으로만 알림이 생긴다.
+- ⚠️ **한계(목 아님, 개선 여지)** (`MOCK_DATA.md` 5번):
   - 읽음 상태는 **클라이언트 전용**(서버에 read 저장 요청 없음).
-  - 알림은 메모리에만 있어 **새로고침/로그아웃 시 사라진다**(영속화 없음).
-- **연동 시 할 일**: `notification` 서비스의 전송 채널(STOMP destination or SSE 등) 확인 → App에서 구독해 `handleReceiveUpbitTickerAlert`로 연결. 매핑 로직은 완성돼 있어 재사용. 필요하면 읽음 처리/미조회 목록 조회 API 추가 검토.
+  - 알림은 메모리에만 있어 **새로고침/로그아웃 시 사라진다**(영속화 없음). 필요 시 읽음 처리/미조회 목록 조회 API 추가 검토.
 
 ---
 

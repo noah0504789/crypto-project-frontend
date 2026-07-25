@@ -18,18 +18,12 @@
 ## 4. 채팅방 제목 하드코딩 — `src/pages/ChatRoomPage/ChatRoomPage.tsx` ✅ **해결 완료**
 **해결**: `GET /chat/room/{roomId}`(`chatRoomApi.getChatRoom`) 상세 조회로 `roomTitle`을 상태로 받아 렌더한다. 같은 조회의 `msgCnt`는 읽음 보고(활동) 시퀀스 시작점으로도 쓴다. 하드코딩 상수는 제거됨.
 
-## 5. 알림 실시간 수신 미연결 + 테스트 버튼 — `src/App.tsx`, `src/pages/HomePage/HomePage.tsx`
-**현재**:
-- `HomePage`는 `<h1>메인 페이지</h1>` + "테스트 알림 발생" 버튼뿐(플레이스홀더).
-- 알림은 오직 이 버튼(`handleMockAlert`)이 만드는 가짜 `UpbitTickerAlertEvent`로만 생성된다.
-- 실제 알림 스트림 구독이 App에 **없음**.
-**연동**:
-- 실제 알림 채널(**STOMP 구독 `/user/topic/notification/`**, 계약 `docs/API_CONTRACT.md` §4)을 App에서 구독해 `handleReceiveUpbitTickerAlert`에 연결. 단 wire payload가 `UpbitTickerAlertEvent`가 아니라 `StompWebNotificationPayload`라 타입/매퍼 정합이 필요(§4 참고).
-- `handleMockAlert` / HomePage 테스트 버튼 제거 또는 실제 홈 콘텐츠로 교체.
-- 매핑 로직 `notificationMapper.mapUpbitTickerAlertToNotification`은 완성됨, 재사용.
+## 5. 알림 실시간 수신 — `src/App.tsx` ✅ **해결 완료**
+**해결**: 로그인 상태일 때 `App`이 STOMP 클라이언트를 띄워 **`/user/topic/notification/`** 를 구독한다(`apis/notificationStompApi.ts`의 `subscribeWebNotifications`). 수신 wire payload는 `WebNotificationEvent`(백엔드 `StompWebNotificationPayload { type, title, body, createdAtMs, link, data }`) → `mapWebNotificationToNotification`으로 `Notification` 변환 후 목록 맨 앞에 추가 → `Header` 벨 드롭다운에 표시. 가짜 `UpbitTickerAlertEvent`·`handleMockAlert`·HomePage 테스트 버튼·구 매퍼는 제거. 로그아웃/언마운트 시 `deactivate`.
+- **남은 한계**: 읽음 상태는 여전히 클라이언트 전용(서버 저장 없음), 알림은 메모리에만 있어 새로고침 시 사라짐(영속화 없음). 필요 시 읽음 처리/미조회 목록 API 추가 검토.
 
-## 6. HomePage 콘텐츠 미완성 — `src/pages/HomePage/HomePage.tsx`
-플레이스홀더 상태. 실제 랜딩/대시보드 콘텐츠 필요(제품 요구사항에 따름).
+## 6. HomePage 콘텐츠 — `src/pages/HomePage/HomePage.tsx` (테스트 버튼 제거, 실제 콘텐츠는 제품 과제)
+목/스텁(테스트 알림 버튼)은 제거되고 간단한 안내 랜딩만 남았다. 실제 랜딩/대시보드 콘텐츠는 제품 요구사항에 따라 별도 작업.
 
 ---
 
@@ -44,7 +38,9 @@
 - OAuth2 로그인/로그아웃/토큰 재발급 (`LoginModal`, `authApi`, `apiClient` 인터셉터)
 - **App 로그인 사용자 실연동**(위 1번 해결) — 초기 프로필 복원 + 세션 만료 대응
 - **가격 알림 조회/저장**(위 2번 해결) — `PriceAlertsPage` → `priceAlertApi`(마켓·설정·저장)
+- **실시간 알림 수신**(위 5번 해결) — `App` → `subscribeWebNotifications`(`/user/topic/notification/`)
 
-## 남은 목/미연동 (연동 순서 제안)
-1. ~~App 사용자 실연동(1번)~~ · ~~가격 알림(2번)~~ · ~~내 채팅방 목 폴백(3번)~~ · ~~채팅방 제목(4번)~~ — ✅ 모두 완료.
-2. **알림 실시간 수신 + HomePage 콘텐츠**(5·6번) — 백엔드 알림 채널(`API_CONTRACT.md` §4, STOMP `/user/topic/notification/`) 구독 연결. **유일하게 남은 목 영역.**
+## 남은 목/미연동
+- 1~5번은 모두 백엔드 연동 완료. **목(mock)/스텁 영역은 더 이상 없다.**
+- 6번 HomePage는 테스트 버튼 제거 후 간단한 안내 랜딩만 있고, 실제 랜딩/대시보드 콘텐츠는 제품 요구사항에 따른 별도 작업(목 아님).
+- 개선 여지(목 아님): 알림 읽음 서버 저장·영속화(5번 한계), STOMP 연결 토큰 만료 재발급(`AUTH.md`).
