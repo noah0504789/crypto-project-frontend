@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Routes, Route, useNavigate, Navigate } from "react-router-dom";
 import type { User } from "@/types/user";
 import type { Notification, UpbitTickerAlertEvent } from "@/types/notification";
+import { AUTH_SESSION_EXPIRED_EVENT } from "@/apis/apiClient";
 import { logout } from "@/apis/authApi";
+import { getMyProfile } from "@/apis/userApi";
 import { mapUpbitTickerAlertToNotification } from "@/utils/notificationMapper";
-import { removeAccessToken } from "@/utils/authStorage";
+import { getAccessToken, removeAccessToken } from "@/utils/authStorage";
 import Header from "@/components/Header/Header";
 import LoginModal from "@/components/Modal/LoginModal";
 import HomePage from "@/pages/HomePage/HomePage";
@@ -23,14 +25,66 @@ import "./App.css";
 export default function App() {
   const navigate = useNavigate();
 
-  const [user, setUser] = useState<User | null>({
-    id: "1",
-    nickname: "noah",
-    email: "noah0969@gmail.com",
-    profileImageUrl: "",
-  });
+  const [user, setUser] = useState<User | null>(null);
+  const [isInitializingUser, setIsInitializingUser] = useState(
+    () => getAccessToken() !== null,
+  );
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+
+  // 앱 시작 시 토큰이 있으면 내 프로필을 불러와 로그인 상태를 복원한다.
+  // (토큰 없으면 로그아웃 상태 유지 → 각 페이지가 user === null 안내를 렌더)
+  useEffect(() => {
+    if (!getAccessToken()) {
+      return;
+    }
+
+    let isCancelled = false;
+
+    async function initializeUser() {
+      try {
+        const profile = await getMyProfile();
+        if (!isCancelled) {
+          setUser(profile);
+        }
+      } catch (error) {
+        // 401 → apiClient가 재발급을 시도하고, 실패하면 토큰을 정리 + 세션 만료 이벤트를 쏜다.
+        // 여기서는 로그아웃 상태만 확정한다.
+        console.error("failed to restore user:", error);
+        if (!isCancelled) {
+          setUser(null);
+        }
+      } finally {
+        if (!isCancelled) {
+          setIsInitializingUser(false);
+        }
+      }
+    }
+
+    void initializeUser();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
+
+  // 요청 도중 세션이 만료되면(토큰 재발급까지 실패) 로그아웃 처리 + 로그인 유도.
+  useEffect(() => {
+    function handleSessionExpired() {
+      setUser(null);
+      setNotifications([]);
+      setIsLoginModalOpen(true);
+    }
+
+    window.addEventListener(AUTH_SESSION_EXPIRED_EVENT, handleSessionExpired);
+
+    return () => {
+      window.removeEventListener(
+        AUTH_SESSION_EXPIRED_EVENT,
+        handleSessionExpired,
+      );
+    };
+  }, []);
 
   function handleOpenLoginModal() {
     setIsLoginModalOpen(true);
@@ -98,35 +152,43 @@ export default function App() {
       />
 
       <main className="main">
-        <Routes>
-          <Route
-            path="/"
-            element={<HomePage onMockAlert={handleMockAlert} />}
-          />
-          <Route path="/chat" element={<ChatPage user={user} />} />
-          <Route path="/chat/my" element={<MyChatRoomPage user={user} />} />
-          <Route
-            path="/chat/create"
-            element={<CreateChatRoomPage user={user} />}
-          />
-          <Route
-            path="/chat/update"
-            element={<UpdateChatRoomPage user={user} />}
-          />
-          <Route path="/chat/room" element={<ChatRoomPage user={user} />} />
-          <Route
-            path="/price-alerts"
-            element={<PriceAlertsPage user={user} />}
-          />
-          <Route path="/account" element={<AccountPage user={user} />}>
-            <Route index element={<Navigate to="profile-edit" replace />} />
+        {isInitializingUser ? (
+          <section className="app-loading">
+            로그인 상태를 확인하는 중...
+          </section>
+        ) : (
+          <Routes>
             <Route
-              path="profile-edit"
-              element={<ProfileEditPage user={user} onUserUpdated={setUser} />}
+              path="/"
+              element={<HomePage onMockAlert={handleMockAlert} />}
             />
-          </Route>
-          <Route path="/login-success" element={<LoginSuccessPage />} />
-        </Routes>
+            <Route path="/chat" element={<ChatPage user={user} />} />
+            <Route path="/chat/my" element={<MyChatRoomPage user={user} />} />
+            <Route
+              path="/chat/create"
+              element={<CreateChatRoomPage user={user} />}
+            />
+            <Route
+              path="/chat/update"
+              element={<UpdateChatRoomPage user={user} />}
+            />
+            <Route path="/chat/room" element={<ChatRoomPage user={user} />} />
+            <Route
+              path="/price-alerts"
+              element={<PriceAlertsPage user={user} />}
+            />
+            <Route path="/account" element={<AccountPage user={user} />}>
+              <Route index element={<Navigate to="profile-edit" replace />} />
+              <Route
+                path="profile-edit"
+                element={
+                  <ProfileEditPage user={user} onUserUpdated={setUser} />
+                }
+              />
+            </Route>
+            <Route path="/login-success" element={<LoginSuccessPage />} />
+          </Routes>
+        )}
       </main>
 
       <Footer />

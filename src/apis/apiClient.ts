@@ -11,6 +11,10 @@ type RetryableAxiosRequestConfig = AxiosRequestConfig & {
   _retry?: boolean;
 };
 
+// 재발급까지 실패해 세션이 끝났음을 앱(React)에 알리는 이벤트.
+// apiClient는 컴포넌트가 아니므로 window 이벤트로 App에 전달한다(App에서 로그아웃 + 로그인 유도).
+export const AUTH_SESSION_EXPIRED_EVENT = 'auth:session-expired';
+
 export const apiClient = axios.create({
   baseURL: GATEWAY_URL,
   withCredentials: true,
@@ -58,6 +62,7 @@ function refreshAccessTokenOnce(): Promise<string> {
 function handleRefreshFailure() {
   removeAccessToken();
   saveRedirectAfterLogin(window.location.pathname + window.location.search);
+  window.dispatchEvent(new Event(AUTH_SESSION_EXPIRED_EVENT));
 }
 
 apiClient.interceptors.request.use((config: InternalAxiosRequestConfig) => {

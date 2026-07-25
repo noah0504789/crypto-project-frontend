@@ -9,3 +9,11 @@
   flex: 1;
   padding: 24px;
 }
+
+.app-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 40vh;
+  color: #6b7280;
+}
