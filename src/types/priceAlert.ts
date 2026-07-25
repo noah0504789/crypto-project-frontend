@@ -13,6 +13,18 @@ export type PriceAlertMarket = {
   englishName: string;
 };
 
+/**
+ * GET /markets 응답 아이템(백엔드 MarketResponse).
+ * 화면 모델 PriceAlertMarket의 code는 이 marketCode에서 온다.
+ */
+export type MarketResponse = {
+  id: number;
+  marketCode: string;
+  symbol: string;
+  koreanName: string;
+  englishName: string;
+};
+
 export type PriceAlertSetting = {
   code: string;
   enabled: boolean;

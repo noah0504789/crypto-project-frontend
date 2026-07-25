@@ -1,11 +1,22 @@
 import {
   PRICE_ALERT_TARGET_CHANGE_RATE_PERCENT_OPTIONS,
+  type MarketResponse,
   type PriceAlertMarket,
   type PriceAlertSetting,
   type PriceAlertSettingForm,
   type PriceAlertTargetChangeRatePercent,
   type UpdateMyPriceAlertSettingsRequest,
 } from '@/types/priceAlert';
+
+export function mapMarketResponseToPriceAlertMarket(
+  response: MarketResponse,
+): PriceAlertMarket {
+  return {
+    code: response.marketCode,
+    koreanName: response.koreanName,
+    englishName: response.englishName,
+  };
+}
 
 const DEFAULT_TARGET_CHANGE_RATE_PERCENT =
   PRICE_ALERT_TARGET_CHANGE_RATE_PERCENT_OPTIONS[0];

@@ -1,4 +1,4 @@
-import { type FormEvent, useState } from 'react';
+import { type FormEvent, useEffect, useState } from 'react';
 import type { User } from '@/types/user';
 import {
   PRICE_ALERT_TARGET_CHANGE_RATE_PERCENT_OPTIONS,
@@ -13,60 +13,27 @@ import {
   convertSettingsToForm,
   createEmptyPriceAlertSettingForm,
 } from '@/utils/priceAlertMapper';
+import {
+  getMarkets,
+  getMyPriceAlertSettings,
+  updateMyPriceAlertSettings,
+} from '@/apis/priceAlertApi';
 import './PriceAlertsPage.css';
 
 type PriceAlertsPageProps = {
   user: User | null;
 };
 
-const markets: PriceAlertMarket[] = [
-  {
-    code: 'KRW-BTC',
-    koreanName: '비트코인',
-    englishName: 'Bitcoin',
-  },
-  {
-    code: 'KRW-ETH',
-    koreanName: '이더리움',
-    englishName: 'Ethereum',
-  },
-  {
-    code: 'KRW-XRP',
-    koreanName: '엑스알피',
-    englishName: 'XRP',
-  },
-  {
-    code: 'KRW-SOL',
-    koreanName: '솔라나',
-    englishName: 'Solana',
-  },
-  {
-    code: 'KRW-DOGE',
-    koreanName: '도지코인',
-    englishName: 'Dogecoin',
-  },
-];
-
-const mockSavedSettings: PriceAlertSetting[] = [
-  {
-    code: 'KRW-BTC',
-    enabled: true,
-    targetChangeRate: 0.03,
-  },
-  {
-    code: 'KRW-ETH',
-    enabled: true,
-    targetChangeRate: 0.05,
-  },
-];
-
 export default function PriceAlertsPage({ user }: PriceAlertsPageProps) {
-  const [savedSettings, setSavedSettings] =
-    useState<PriceAlertSetting[]>(mockSavedSettings);
+  const isLoggedIn = user !== null;
 
-  const [formSettings, setFormSettings] = useState<PriceAlertSettingForm[]>(
-    convertSettingsToForm(markets, mockSavedSettings),
-  );
+  const [markets, setMarkets] = useState<PriceAlertMarket[]>([]);
+  const [savedSettings, setSavedSettings] = useState<PriceAlertSetting[]>([]);
+  const [formSettings, setFormSettings] = useState<PriceAlertSettingForm[]>([]);
+
+  const [isLoading, setIsLoading] = useState(isLoggedIn);
+  const [loadError, setLoadError] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isMarketModalOpen, setIsMarketModalOpen] = useState(false);
@@ -74,7 +41,51 @@ export default function PriceAlertsPage({ user }: PriceAlertsPageProps) {
     new Set(),
   );
 
-  const isLoggedIn = user !== null;
+  // 마운트 시 마켓 목록 + 내 설정을 함께 조회해 폼을 구성한다.
+  useEffect(() => {
+    if (!isLoggedIn) {
+      return;
+    }
+
+    let isCancelled = false;
+
+    async function loadPriceAlerts() {
+      try {
+        const [marketList, settings] = await Promise.all([
+          getMarkets(),
+          getMyPriceAlertSettings(),
+        ]);
+
+        if (isCancelled) {
+          return;
+        }
+
+        setMarkets(marketList);
+        setSavedSettings(settings);
+        setFormSettings(convertSettingsToForm(marketList, settings));
+        setLoadError(false);
+      } catch (error) {
+        console.error('failed to load price alerts:', error);
+
+        if (!isCancelled) {
+          setMarkets([]);
+          setSavedSettings([]);
+          setFormSettings([]);
+          setLoadError(true);
+        }
+      } finally {
+        if (!isCancelled) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    loadPriceAlerts();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [isLoggedIn, reloadKey]);
 
   const selectableMarkets = markets.filter(
     (market) => !formSettings.some((setting) => setting.code === market.code),
@@ -220,24 +231,9 @@ export default function PriceAlertsPage({ user }: PriceAlertsPageProps) {
     setIsSubmitting(true);
 
     try {
-      console.log('save price alert settings:', requestBody);
+      await updateMyPriceAlertSettings(requestBody);
 
-      /**
-       * 백엔드 컨트롤러 연결 후 사용
-       *
-       * const response = await fetch('/price-alerts/me', {
-       *   method: 'PUT',
-       *   headers: {
-       *     'Content-Type': 'application/json',
-       *   },
-       *   body: JSON.stringify(requestBody),
-       * });
-       *
-       * if (!response.ok) {
-       *   throw new Error('Failed to save price alert settings');
-       * }
-       */
-
+      // 저장 성공(204). 재조회 없이 폼을 저장본으로 로컬 동기화(낙관적 갱신 후 동기화 패턴).
       const nextSavedSettings = convertFormToSavedSettings(formSettings);
 
       setSavedSettings(nextSavedSettings);
@@ -254,12 +250,45 @@ export default function PriceAlertsPage({ user }: PriceAlertsPageProps) {
     }
   }
 
+  function handleRetry() {
+    setIsLoading(true);
+    setLoadError(false);
+    setReloadKey((prevKey) => prevKey + 1);
+  }
+
   if (!isLoggedIn) {
     return (
       <section className="price-alerts-page">
         <div className="price-alerts-empty-card">
           <h1>가격 알림</h1>
           <p>가격 알림 설정은 로그인 후 사용할 수 있습니다.</p>
+        </div>
+      </section>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <section className="price-alerts-page">
+        <div className="price-alerts-empty-card">
+          <p>가격 알림 설정을 불러오는 중입니다.</p>
+        </div>
+      </section>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <section className="price-alerts-page">
+        <div className="price-alerts-empty-card">
+          <p>가격 알림 설정을 불러오지 못했습니다.</p>
+          <button
+            type="button"
+            className="price-alert-add-button"
+            onClick={handleRetry}
+          >
+            다시 시도
+          </button>
         </div>
       </section>
     );
