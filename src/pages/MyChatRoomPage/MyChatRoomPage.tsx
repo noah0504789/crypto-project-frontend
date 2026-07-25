@@ -14,41 +14,6 @@ type MyChatRoomsPageProps = {
 };
 
 const MY_CHAT_ROOM_LIMIT = 10;
-const mockMyChatRooms: MyChatRoom[] = [
-  {
-    id: 101,
-    hostId: "1",
-    title: "비트코인 단기 시황방",
-    category: "CRYPTO_CURRENCY",
-    description: "BTC 단기 흐름과 주요 지지/저항을 이야기하는 방입니다.",
-    lastMsgContent: "오늘 저항선은 108K 부근으로 보입니다.",
-    lastMsgCreatedAt: "2026-06-11T10:10:00",
-    unreadMsgCnt: 3,
-    memberCnt: 128,
-  },
-  {
-    id: 102,
-    hostId: "12",
-    title: "이더리움 장기 투자방",
-    category: "CRYPTO_CURRENCY",
-    description: "ETH 장기 관점과 생태계 뉴스를 공유합니다.",
-    lastMsgContent: "ETF 자금 유입 체크해볼게요.",
-    lastMsgCreatedAt: "2026-06-11T09:40:00",
-    unreadMsgCnt: 0,
-    memberCnt: 86,
-  },
-  {
-    id: 103,
-    hostId: "1",
-    title: "알트코인 관찰방",
-    category: "CRYPTO_CURRENCY",
-    description: "거래량과 테마 중심으로 알트코인을 함께 봅니다.",
-    lastMsgContent: null,
-    lastMsgCreatedAt: null,
-    unreadMsgCnt: 0,
-    memberCnt: 64,
-  },
-];
 
 export default function MyChatRoomsPage({ user }: MyChatRoomsPageProps) {
   const isLoggedIn = user !== null;
@@ -61,6 +26,8 @@ export default function MyChatRoomsPage({ user }: MyChatRoomsPageProps) {
   const [isLoading, setIsLoading] = useState(isLoggedIn);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [leavingRoomId, setLeavingRoomId] = useState<number | null>(null);
+  const [loadError, setLoadError] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
 
   // 배지 이벤트 처리용(4.9): 현재 목록 방 id 집합 + prepend 진행 중 방(중복 조회 방지).
   const roomIdsRef = useRef<Set<number>>(new Set());
@@ -91,13 +58,14 @@ export default function MyChatRoomsPage({ user }: MyChatRoomsPageProps) {
 
         setMyChatRooms(response.items);
         setHasNext(response.hasNext);
+        setLoadError(false);
       } catch (error) {
         console.error("failed to load my chat rooms:", error);
 
         if (!isCancelled) {
-          // setMyChatRooms([]);
-          setMyChatRooms(mockMyChatRooms);
+          setMyChatRooms([]);
           setHasNext(false);
+          setLoadError(true);
         }
       } finally {
         if (!isCancelled) {
@@ -111,7 +79,7 @@ export default function MyChatRoomsPage({ user }: MyChatRoomsPageProps) {
     return () => {
       isCancelled = true;
     };
-  }, [isLoggedIn]);
+  }, [isLoggedIn, reloadKey]);
 
   async function prependMissingRoom(roomId: number) {
     if (prependingRoomIdsRef.current.has(roomId)) {
@@ -270,6 +238,12 @@ export default function MyChatRoomsPage({ user }: MyChatRoomsPageProps) {
     }
   }
 
+  function handleRetry() {
+    setIsLoading(true);
+    setLoadError(false);
+    setReloadKey((prevKey) => prevKey + 1);
+  }
+
   if (!isLoggedIn) {
     return (
       <section className="my-chat-rooms-page">
@@ -295,6 +269,17 @@ export default function MyChatRoomsPage({ user }: MyChatRoomsPageProps) {
       {isLoading ? (
         <div className="my-chat-rooms-empty-card">
           내 채팅방을 불러오는 중입니다.
+        </div>
+      ) : loadError ? (
+        <div className="my-chat-rooms-empty-card">
+          <p>내 채팅방을 불러오지 못했습니다.</p>
+          <button
+            type="button"
+            className="my-chat-room-button primary"
+            onClick={handleRetry}
+          >
+            다시 시도
+          </button>
         </div>
       ) : myChatRooms.length > 0 ? (
         <>
