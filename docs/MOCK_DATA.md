@@ -16,14 +16,8 @@
 - **저장이 스텁**: `handleSubmit` 안에서 실제 저장 대신 `console.log('save price alert settings:', requestBody)` + 주석 처리된 `fetch` 예시. 저장 성공을 **로컬에서 흉내**냄(`convertFormToSavedSettings`). → `PUT /price-alerts/me` 실제 호출로 교체.
 - **해야 할 일**: `src/apis/priceAlertApi.ts` 신규 생성(`getMyPriceAlertSettings`, `updateMyPriceAlertSettings`) → `apiClient` 사용. 요청 바디 diff 계산 로직(`priceAlertMapper.convertFormToRequest`)은 이미 완성됨, 재사용.
 
-## 3. 내 채팅방 목 폴백 — `src/pages/MyChatRoomPage/MyChatRoomPage.tsx`
-**현재**: API 호출은 실제(`getMyChatRooms`)지만, 실패(catch) 시 빈 배열 대신 `mockMyChatRooms`로 폴백한다.
-```ts
-} catch (error) {
-  // setMyChatRooms([]);        ← 실제 동작(주석 처리됨)
-  setMyChatRooms(mockMyChatRooms);  ← 목 폴백(현재 활성)
-```
-**연동**: `mockMyChatRooms` 상수 삭제, catch에서 빈 배열/에러 처리로 복원(주석 라인 활성화). 백엔드가 붙으면 실패 시 목이 뜨는 것은 디버깅을 방해한다.
+## 3. 내 채팅방 목 폴백 — `src/pages/MyChatRoomPage/MyChatRoomPage.tsx` ✅ **해결 완료**
+**해결**: `mockMyChatRooms` 상수 삭제. 조회 실패(catch) 시 목 대신 빈 목록 + `loadError` 상태로 전환해 "불러오지 못했습니다 + 다시 시도" 카드를 렌더(재시도는 `reloadKey`로 재조회). 성공 시 `loadError` 해제. 실패가 더 이상 가짜 데이터로 가려지지 않는다.
 
 ## 4. 채팅방 제목 하드코딩 — `src/pages/ChatRoomPage/ChatRoomPage.tsx` ✅ **해결 완료**
 **해결**: `GET /chat/room/{roomId}`(`chatRoomApi.getChatRoom`) 상세 조회로 `roomTitle`을 상태로 받아 렌더한다. 같은 조회의 `msgCnt`는 읽음 보고(활동) 시퀀스 시작점으로도 쓴다. 하드코딩 상수는 제거됨.
@@ -46,7 +40,7 @@
 ## 참고: 이미 실제 연동된(목 아님) 부분
 아래는 이미 실 API/STOMP를 호출한다. 백엔드만 뜨면 동작 → 목으로 오해하지 말 것.
 - 인기 채팅방 목록 조회 (`ChatPage` → `getPopularChatRooms`)
-- 내 채팅방 조회/나가기 (`MyChatRoomPage`, 단 실패 폴백만 목 — 위 3번)
+- 내 채팅방 조회/나가기 (`MyChatRoomPage`, 실패 시 에러 카드 — 목 폴백 제거)
 - 채팅방 생성/수정 (`Create/UpdateChatRoomPage`)
 - 채팅 메시지 조회 + 실시간 송수신 (`ChatRoomPage`, STOMP)
 - 내 채팅방 뱃지 실시간 (`MyChatRoomPage`, STOMP)

@@ -73,7 +73,7 @@
   ```
 - **API/STOMP**: `getMyChatRooms`, `getMyChatRoom`(배지 방이 목록에 없을 때 단건 조회), `leaveChatRoom`, `subscribeMyChatRoomBadge`.
 - **배지 갱신(4.9)**: 배지 이벤트 수신 시 해당 방을 안읽음+1·최근 메시지 갱신 후 **목록 맨 앞으로 이동**. 목록에 없는 방이면 `getMyChatRoom`으로 조회해 prepend.
-- ⚠️ 조회 **실패 시 목 데이터로 폴백**(`mockMyChatRooms`) — `MOCK_DATA.md` 3번.
+- **조회 실패 처리**: 목 폴백 제거됨. 실패 시 빈 목록 + `loadError`로 "다시 시도" 카드 표시(재조회는 `reloadKey`).
 - **로그인 필요**: O.
 
 ### `/chat/create` — CreateChatRoomPage (`pages/CreateChatRoomPage/CreateChatRoomPage.tsx`)

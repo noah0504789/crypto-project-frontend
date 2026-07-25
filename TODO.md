@@ -11,7 +11,6 @@ React SPA를 실제 API Gateway에 붙이기 위한 **레거시(js+html) → Rea
 - **가격 알림 전체**(api 모듈 신규 생성 필요) — `MOCK_DATA.md` §2
 - **알림 실시간 수신 연결**(STOMP `/user/topic/notification/` 구독) — `MOCK_DATA.md` §5 · 계약 `API_CONTRACT.md` §4
 - **HomePage 실제 콘텐츠** — `MOCK_DATA.md` §6
-- **내 채팅방 조회 실패 시 목 폴백 제거** — `MOCK_DATA.md` §3
 
 ## 참고 (현재 React 파일 배치 · 관련 문서)
 
