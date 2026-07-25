@@ -3,7 +3,7 @@
 이 파일은 모든 작업에 항상 필요한 짧은 공통 규칙만 담는다. 상세 규칙은 `.claude/rules/`, 사람이 읽는 설명은 `docs/`에 있다.
 
 ## 프로젝트 개요
-React 19 · TypeScript · Vite 기반 SPA. `crypto-project` 백엔드(Spring Cloud MSA)의 프론트엔드로, 가상화폐 오픈채팅과 가격 알림을 제공한다. 모든 API/WebSocket 요청은 API Gateway 한 곳(`VITE_GATEWAY_URL`)으로 나간다.
+React 19 · TypeScript · Vite 기반 SPA. `crypto-project` 백엔드(Spring Cloud MSA)의 프론트엔드로, 가상화폐 오픈채팅, 가격 알림, 계정/프로필 관리를 제공한다. 모든 API/WebSocket 요청은 API Gateway 한 곳(`VITE_GATEWAY_URL`)으로 나간다.
 
 - 라우팅: `react-router-dom` v7 (`BrowserRouter`)
 - HTTP: `axios` (`src/apis/apiClient.ts`, access token/refresh 인터셉터)
@@ -15,7 +15,7 @@ React 19 · TypeScript · Vite 기반 SPA. `crypto-project` 백엔드(Spring Clo
 - `docs/PAGES.md` — 카테고리별 화면 역할·기능·플로우(알림 포함)
 - `docs/UTILITIES.md` — `src/utils` 순수 함수/매퍼 레퍼런스
 - `docs/AUTH.md` — 인증 구현(토큰·인터셉터·OAuth2 흐름)
-- `docs/API_CONTRACT.md` — 백엔드 REST/STOMP 계약
+- `docs/API_CONTRACT.md` — 백엔드 REST/STOMP 계약(**계약 값의 정본**)
 - `docs/MOCK_DATA.md` — 목/스텁 교체 대상(실연동 단계)
 - `TODO.md` — 백엔드 실연동 작업 목록(레거시 실동작 코드 + 백엔드 확인 근거·정정값 포함, 항목별 자체 완결)
 
