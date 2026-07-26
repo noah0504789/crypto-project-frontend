@@ -7,7 +7,11 @@ import { logout } from "@/apis/authApi";
 import { getMyProfile } from "@/apis/userApi";
 import { createStompClient } from "@/apis/stompClient";
 import { subscribeWebNotifications } from "@/apis/notificationStompApi";
-import { mapWebNotificationToNotification } from "@/utils/notificationMapper";
+import { getMyNotifications } from "@/apis/notificationApi";
+import {
+  mapNotificationResponseToNotification,
+  mapWebNotificationToNotification,
+} from "@/utils/notificationMapper";
 import { getAccessToken, removeAccessToken } from "@/utils/authStorage";
 import Header from "@/components/Header/Header";
 import LoginModal from "@/components/Modal/LoginModal";
@@ -32,6 +36,8 @@ export default function App() {
     () => getAccessToken() !== null,
   );
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [hasNextNotification, setHasNextNotification] = useState(false);
+  const [isLoadingNotifications, setIsLoadingNotifications] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
   // 앱 시작 시 토큰이 있으면 내 프로필을 불러와 로그인 상태를 복원한다.
@@ -75,6 +81,7 @@ export default function App() {
     function handleSessionExpired() {
       setUser(null);
       setNotifications([]);
+      setHasNextNotification(false);
       setIsLoginModalOpen(true);
     }
 
@@ -114,6 +121,91 @@ export default function App() {
     };
   }, [user]);
 
+  // 로그인 시 알림함 첫 페이지를 불러온다(최신순). 이후 실시간 수신분은 STOMP가 맨 앞에 붙인다.
+  // (로그아웃/세션 만료 시 hasNext 리셋은 각 핸들러에서 처리)
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+
+    let isCancelled = false;
+
+    async function loadFirstPage() {
+      setIsLoadingNotifications(true);
+      try {
+        const page = await getMyNotifications();
+        if (isCancelled) {
+          return;
+        }
+        const items = page.items.map(mapNotificationResponseToNotification);
+        // 이미 받은 실시간(STOMP) 항목은 맨 위에 유지하고 그 아래에 REST 목록을 둔다.
+        setNotifications((prevNotifications) => {
+          const liveItems = prevNotifications.filter((notification) =>
+            notification.id.startsWith("stomp-"),
+          );
+          return [...liveItems, ...items];
+        });
+        setHasNextNotification(page.hasNext);
+      } catch (error) {
+        if (!isCancelled) {
+          console.error("failed to load notifications:", error);
+        }
+      } finally {
+        if (!isCancelled) {
+          setIsLoadingNotifications(false);
+        }
+      }
+    }
+
+    void loadFirstPage();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [user]);
+
+  // 드롭다운을 아래로 스크롤하면 현재 목록의 가장 오래된(맨 아래) 항목 커서로 다음 페이지를 append 한다.
+  async function handleLoadMoreNotifications() {
+    if (isLoadingNotifications || !hasNextNotification) {
+      return;
+    }
+
+    const cursorItem = [...notifications]
+      .reverse()
+      .find(
+        (notification) =>
+          notification.recipientId != null &&
+          notification.deliveredAtMs != null,
+      );
+
+    if (!cursorItem) {
+      return;
+    }
+
+    setIsLoadingNotifications(true);
+    try {
+      const page = await getMyNotifications({
+        lastRecipientId: cursorItem.recipientId,
+        lastDeliveredAtMs: cursorItem.deliveredAtMs,
+      });
+      const olderItems = page.items.map(mapNotificationResponseToNotification);
+      setNotifications((prevNotifications) => {
+        const existingIds = new Set(
+          prevNotifications.map((notification) => notification.id),
+        );
+        const deduped = olderItems.filter(
+          (notification) => !existingIds.has(notification.id),
+        );
+        return [...prevNotifications, ...deduped];
+      });
+      setHasNextNotification(page.hasNext);
+    } catch (error) {
+      console.error("failed to load more notifications:", error);
+    } finally {
+      setIsLoadingNotifications(false);
+    }
+  }
+
   function handleOpenLoginModal() {
     setIsLoginModalOpen(true);
   }
@@ -132,11 +224,12 @@ export default function App() {
       removeAccessToken();
       setUser(null);
       setNotifications([]);
+      setHasNextNotification(false);
       navigate("/", { replace: true });
     }
   }
 
-  function handleReadNotification(notificationId: number) {
+  function handleReadNotification(notificationId: string) {
     setNotifications((prevNotifications) =>
       prevNotifications.map((notification) =>
         notification.id === notificationId
@@ -155,6 +248,9 @@ export default function App() {
         user={user}
         notifications={notifications}
         onReadNotification={handleReadNotification}
+        onLoadMoreNotifications={handleLoadMoreNotifications}
+        hasNextNotification={hasNextNotification}
+        isLoadingNotifications={isLoadingNotifications}
         onLogin={handleOpenLoginModal}
         onLogout={handleLogout}
       />

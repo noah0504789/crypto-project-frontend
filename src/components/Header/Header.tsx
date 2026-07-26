@@ -10,7 +10,10 @@ import "./Header.css";
 type HeaderProps = {
   user: User | null;
   notifications: Notification[];
-  onReadNotification: (notificationId: number) => void;
+  onReadNotification: (notificationId: string) => void;
+  onLoadMoreNotifications: () => void;
+  hasNextNotification: boolean;
+  isLoadingNotifications: boolean;
   onLogin: () => void;
   onLogout: () => void;
 };
@@ -19,6 +22,9 @@ export default function Header({
   user,
   notifications,
   onReadNotification,
+  onLoadMoreNotifications,
+  hasNextNotification,
+  isLoadingNotifications,
   onLogin,
   onLogout,
 }: HeaderProps) {
@@ -85,6 +91,18 @@ export default function Header({
     }
   }
 
+  // 아래로 스크롤해 바닥 근처에 닿으면 다음 페이지(더 오래된 알림)를 요청한다.
+  function handleNotificationListScroll(
+    event: React.UIEvent<HTMLDivElement>,
+  ) {
+    const { scrollTop, scrollHeight, clientHeight } = event.currentTarget;
+    const NEAR_BOTTOM_THRESHOLD = 40;
+
+    if (scrollHeight - scrollTop - clientHeight <= NEAR_BOTTOM_THRESHOLD) {
+      onLoadMoreNotifications();
+    }
+  }
+
   function handleToggleProfileMenu() {
     setIsProfileMenuOpen((prev) => !prev);
     setIsNotificationMenuOpen(false);
@@ -146,7 +164,10 @@ export default function Header({
                   </div>
 
                   {notifications.length > 0 ? (
-                    <div className="notification-list">
+                    <div
+                      className="notification-list"
+                      onScroll={handleNotificationListScroll}
+                    >
                       {notifications.map((notification) => (
                         <button
                           key={notification.id}
@@ -192,9 +213,25 @@ export default function Header({
                           </div>
                         </button>
                       ))}
+
+                      {isLoadingNotifications && (
+                        <p className="notification-list-status">
+                          알림을 불러오는 중...
+                        </p>
+                      )}
+
+                      {!hasNextNotification && !isLoadingNotifications && (
+                        <p className="notification-list-status">
+                          마지막 알림입니다.
+                        </p>
+                      )}
                     </div>
                   ) : (
-                    <p className="notification-empty">새 알림이 없습니다.</p>
+                    <p className="notification-empty">
+                      {isLoadingNotifications
+                        ? "알림을 불러오는 중..."
+                        : "새 알림이 없습니다."}
+                    </p>
                   )}
                 </div>
               )}

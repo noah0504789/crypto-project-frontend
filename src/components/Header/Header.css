@@ -453,3 +453,12 @@
   font-size: 13px;
   text-align: center;
 }
+
+.notification-list-status {
+  margin: 0;
+  padding: 12px 8px;
+
+  color: #9ca3af;
+  font-size: 12px;
+  text-align: center;
+}
