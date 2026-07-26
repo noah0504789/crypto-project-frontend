@@ -9,7 +9,7 @@
 | `dateFormatter.ts` | 포매터 | `Asia/Seoul` 기준 날짜/시간 표기 |
 | `chatMessageUtils.ts` | 매퍼/헬퍼 | 채팅 메시지 생성·변환, `clientMessageId` 생성, 검증 |
 | `userMapper.ts` | 매퍼 | `UserResponse` → `User` |
-| `notificationMapper.ts` | 매퍼 | `WebNotificationEvent` → `Notification` |
+| `notificationMapper.ts` | 매퍼 | STOMP `WebNotificationEvent`·REST `NotificationResponse` → `Notification` |
 | `priceAlertMapper.ts` | 매퍼 | 가격 알림 설정 ↔ 폼 ↔ PUT 요청(diff) |
 | `priceAlertValidator.ts` | 검증 | 변화율 퍼센트 유효성 |
 
@@ -64,10 +64,12 @@
 - `mapUserResponseToUser(res)` — `UserResponse{id,nickname,email,createdAt}` → `User{id,nickname,email}`(createdAt 버림).
 
 ### `notificationMapper.ts`
-- `mapWebNotificationToNotification(event)` — `WebNotificationEvent{type,title,body,createdAtMs,link,data?}` → `Notification`.
+- `mapWebNotificationToNotification(event)` — STOMP `WebNotificationEvent{type,title,body,createdAtMs,link,data?}` → `Notification`.
   - 서버가 `title`/`body`를 표시용으로 완성해 보내므로 그대로 사용(프론트 재조립 없음).
-  - `id`는 wire에 없어 `createdAtMs`를 사용, `createdAt`은 `createdAtMs`→ISO 문자열, `link` 있으면 유지.
-  - 참고: `Notification.messageParts`(부분 굵게/줄바꿈) 타입은 남아 있으나 현재 매퍼가 채우지 않는다(서버 완성 문자열 사용).
+  - wire에 id가 없어 `id = stomp-{createdAtMs}`(REST의 `notificationId`와 id 공간 구분), `createdAt`은 `createdAtMs`→ISO.
+- `mapNotificationResponseToNotification(response)` — REST `NotificationResponse` → `Notification`.
+  - `id = notificationId`, `messageParts`는 서버가 채워 보내면 그대로 반영(비면 `undefined`).
+  - 표시 시각 `createdAt`은 **`deliveredAtMs`→ISO**(목록 정렬 키와 일치, 타임존 안전). 커서용 `recipientId`·`deliveredAtMs`를 화면 모델에 보관(다음 페이지 요청에 사용).
 
 ### `priceAlertMapper.ts` — 가격 알림(핵심 로직)
 화면(퍼센트 "3")과 서버(비율 0.03) 사이 변환 + 저장 diff 계산.

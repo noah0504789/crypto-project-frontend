@@ -160,20 +160,21 @@
 
 **페이지가 아니라 앱 전역 기능**이다. 별도 라우트 없이 `App.tsx`(상태) + `Header`(표시)로 동작한다. 관련: `types/notification.ts`, `utils/notificationMapper.ts`.
 
-- **역할**: 서버가 보내는 실시간 알림을 헤더 벨(🔔) 드롭다운으로 보여준다.
-- **수신**(`App.tsx`): 로그인 상태면 STOMP 클라이언트로 **`/user/topic/notification/`** 구독(`apis/notificationStompApi.ts`의 `subscribeWebNotifications`). 로그아웃/언마운트 시 `deactivate`.
-- **상태 소유**: `App.tsx`의 `notifications: Notification[]`.
-  - 수신 시 `mapWebNotificationToNotification`으로 매핑해 목록 **맨 앞에 추가**.
-  - `handleReadNotification(id)` — 해당 알림 `read: true`로 변경.
-  - 로그아웃/세션 만료 시 `setNotifications([])`로 초기화.
-- **매핑**(`notificationMapper.mapWebNotificationToNotification`): `WebNotificationEvent { type, title, body, createdAtMs, link, data }` → `Notification`. 서버가 `title`/`body`를 완성해 보내므로 그대로 사용, `id`는 `createdAtMs`, `link` 있으면 유지.
+- **역할**: 서버가 보내는 알림을 헤더 벨(🔔) 드롭다운으로 보여준다. **REST 인박스(과거 알림) + STOMP(실시간)** 를 한 목록으로 합친다.
+- **초기 로드**(`App.tsx`): 로그인 시 `getMyNotifications()`로 **첫 페이지(최신순)** 조회(`apis/notificationApi.ts`). 이미 받은 실시간 항목은 맨 위에 유지하고 그 아래에 REST 목록을 둔다.
+- **수신**(`App.tsx`): 로그인 상태면 STOMP로 **`/user/topic/notification/`** 구독(`subscribeWebNotifications`). 수신 시 목록 **맨 앞에 추가**. 로그아웃/언마운트 시 `deactivate`.
+- **더 보기(무한 스크롤)**(`Header` 드롭다운): `.notification-list`를 아래로 스크롤해 바닥 근처(40px)면 `onLoadMoreNotifications` → 현재 목록의 **가장 오래된(맨 아래) 항목**의 `recipientId`+`deliveredAtMs` 커서로 다음 페이지를 **append**. `hasNextNotification`false면 "마지막 알림입니다", 로딩 중이면 "불러오는 중..." 표시. (chatroom inbox 커서 방식과 동일)
+- **상태 소유**: `App.tsx`의 `notifications: Notification[]` + `hasNextNotification`·`isLoadingNotifications`.
+  - `handleReadNotification(id: string)` — 해당 알림 `read: true`(클라 전용).
+  - 로그아웃/세션 만료 시 `setNotifications([])` + `hasNext` 리셋.
+- **매핑**(`notificationMapper`): REST `NotificationResponse` → `mapNotificationResponseToNotification`(id=`notificationId`, 커서용 `recipientId`·`deliveredAtMs` 보관, 표시 시각은 `deliveredAtMs`). STOMP `WebNotificationEvent{type,title,body,createdAtMs,link,data}` → `mapWebNotificationToNotification`(id=`stomp-{createdAtMs}`로 REST id와 구분). 서버가 `title`/`body` 완성 → 그대로 사용.
 - **표시**(`Header`): 안읽음이 하나라도 있으면 벨에 빨간 점(`hasUnreadNotification`). 드롭다운에서 항목 클릭 시:
   ```
   onReadNotification(id) → read 처리
   notification.link 있으면 → 드롭다운 닫고 navigate(link)
   ```
   바깥 클릭 시 드롭다운 닫힘.
-- **타입**(`types/notification.ts`): `Notification`(id, title, message, messageParts?, link?, createdAt, read), `NotificationMessagePart`, `WebNotificationEvent`.
+- **타입**(`types/notification.ts`): `Notification`(id:string, title, message, messageParts?, link?, createdAt, read, recipientId?, deliveredAtMs?), `NotificationMessagePart`, `WebNotificationEvent`(STOMP), `NotificationResponse`·`NotificationsResponse`·`NotificationCursor`(REST).
 - **플로우**:
   ```
   백엔드 notification → Kafka → websocket-gateway → convertAndSendToUser(/topic/notification/)
@@ -181,8 +182,8 @@
     → Header 벨 점 표시 → 드롭다운에서 확인/읽음(link 있으면 이동)
   ```
 - ⚠️ **한계(목 아님, 개선 여지)**:
-  - 읽음 상태는 **클라이언트 전용**(서버에 read 저장 요청 없음).
-  - 알림은 메모리에만 있어 **새로고침/로그아웃 시 사라진다**(영속화 없음). 필요 시 읽음 처리/미조회 목록 조회 API 추가 검토.
+  - 읽음 상태는 **클라이언트 전용**(서버 `PATCH /notifications/{id}/read` 미연동 — 백엔드 엔드포인트는 존재). 새로고침하면 읽음 표시는 초기화된다.
+  - **과거 알림은 이제 REST 인박스로 복원된다**(새로고침해도 `GET /notifications/me`로 다시 로드). 단 세션 중 실시간(STOMP) 수신분과 REST분은 id 공간이 달라(백엔드 push 페이로드에 `notificationId` 없음) **교차 dedup 불가** → 실시간으로 받은 알림이 다음 새로고침 시 REST 목록에서 한 번 중복돼 보일 수 있음(경미).
 
 ---
 

@@ -36,6 +36,7 @@
 | 마켓 목록 | `GET /markets` | — | 200 |
 | 내 가격 알림 조회 | `GET /price-alerts/me` | — | 200 |
 | 내 가격 알림 저장 | `PUT /price-alerts/me` | `{ creates[], updates[], deletes[] }` | 204 |
+| 내 알림함 | `GET /notifications/me` | `limit, lastRecipientId, lastDeliveredAtMs` | 200 |
 | 토큰 재발급 | `POST /auth/refresh` | 빈 body, 쿠키 | 201 + `Authorization` 헤더 |
 | 로그아웃 | `POST /auth/logout` | Bearer | 2xx |
 
@@ -95,6 +96,17 @@
 - `targetChangeRate`는 **비율**(0.03 = 3%). 화면 퍼센트("3")↔비율 변환은 `priceAlertMapper.ts`. 백엔드 검증: `0.01 ≤ targetChangeRate ≤ 1.00`(`@DecimalMin`/`@DecimalMax`).
 - 사용자 식별은 게이트웨이가 넣는 `X-User-Id`(UUID publicId)로 서버가 판단 → 프론트는 `apiClient`(Bearer)만 쓰면 된다.
 - 백엔드 근거: `market/market-adapter-in/.../web/{MarketController,PriceAlertSettingController}.java`, DTO `MarketResponse`·`MyPriceAlertSettingsResponse`·`PriceAlertSettingChangeRequest`.
+
+### 알림 인박스 (`apis/notificationApi.ts`)
+| 프론트 | 요청 | 응답 |
+| --- | --- | --- |
+| `getMyNotifications({limit, lastRecipientId?, lastDeliveredAtMs?})` | `GET /notifications/me?limit&lastRecipientId&lastDeliveredAtMs` | `NotificationsResponse { items: NotificationResponse[], hasNext }` |
+
+- **커서 페이지네이션**: `deliveredAt DESC, _id DESC` 정렬(최신 먼저). 다음 페이지는 현재 목록의 **가장 오래된(맨 아래)** 항목의 `recipientId`(= `lastRecipientId`) + `deliveredAtMs`(= `lastDeliveredAtMs`)로 요청. 커서 없으면 첫 페이지.
+- `NotificationResponse`: `{ id(=notificationId), recipientId, title, message, messageParts[], read, readAt, deliveredAt, deliveredAtMs, createdAt, link }`. **`deliveredAtMs`는 epoch millis(커서 정본)** — `deliveredAt`(LocalDateTime 문자열, `Asia/Seoul`)의 zone 모호성을 피하려고 백엔드가 millis도 함께 내려준다.
+- 사용자 식별은 `X-User-Id`(게이트웨이 주입) → 프론트는 `apiClient`(Bearer)만. 게이트웨이 인가: `/notifications/**` `hasRole(USER)`.
+- 화면 매핑: `mapNotificationResponseToNotification`(`utils/notificationMapper.ts`) → `Notification`(id=notificationId, `recipientId`·`deliveredAtMs`는 다음 커서용으로 보관). 실시간 STOMP 수신분과 구분되게 STOMP 항목 id는 `stomp-{createdAtMs}`.
+- 백엔드 근거: `notification/notification-adapter-in/.../web/{NotificationController,dto/NotificationResponse,dto/NotificationCursor}.java`. `deliveredAtMs = deliveredAt.atZone(Asia/Seoul).toInstant().toEpochMilli()`.
 
 ## 3. STOMP (`apis/chatStompApi.ts`, `stompClient.ts`)
 
