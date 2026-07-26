@@ -9,7 +9,7 @@
 | `dateFormatter.ts` | 포매터 | `Asia/Seoul` 기준 날짜/시간 표기 |
 | `chatMessageUtils.ts` | 매퍼/헬퍼 | 채팅 메시지 생성·변환, `clientMessageId` 생성, 검증 |
 | `userMapper.ts` | 매퍼 | `UserResponse` → `User` |
-| `notificationMapper.ts` | 매퍼 | `UpbitTickerAlertEvent` → `Notification` |
+| `notificationMapper.ts` | 매퍼 | `WebNotificationEvent` → `Notification` |
 | `priceAlertMapper.ts` | 매퍼 | 가격 알림 설정 ↔ 폼 ↔ PUT 요청(diff) |
 | `priceAlertValidator.ts` | 검증 | 변화율 퍼센트 유효성 |
 
@@ -64,9 +64,10 @@
 - `mapUserResponseToUser(res)` — `UserResponse{id,nickname,email,createdAt}` → `User{id,nickname,email}`(createdAt 버림).
 
 ### `notificationMapper.ts`
-- `mapUpbitTickerAlertToNotification(event)` — `UpbitTickerAlertEvent` → `Notification`.
-  - 변화율 `changeRate*100` → `%`(소수 2자리), 가격 천단위 콤마.
-  - `messageParts`로 부분 굵게(`bold`)·줄바꿈(`lineBreakAfter`) 표현 → `Header`가 렌더.
+- `mapWebNotificationToNotification(event)` — `WebNotificationEvent{type,title,body,createdAtMs,link,data?}` → `Notification`.
+  - 서버가 `title`/`body`를 표시용으로 완성해 보내므로 그대로 사용(프론트 재조립 없음).
+  - `id`는 wire에 없어 `createdAtMs`를 사용, `createdAt`은 `createdAtMs`→ISO 문자열, `link` 있으면 유지.
+  - 참고: `Notification.messageParts`(부분 굵게/줄바꿈) 타입은 남아 있으나 현재 매퍼가 채우지 않는다(서버 완성 문자열 사용).
 
 ### `priceAlertMapper.ts` — 가격 알림(핵심 로직)
 화면(퍼센트 "3")과 서버(비율 0.03) 사이 변환 + 저장 diff 계산.
@@ -77,6 +78,7 @@
 | `createEmptyPriceAlertSettingForm(market)` | 새로 추가한 코인의 기본 폼(enabled=true, 기본 퍼센트) |
 | `convertFormToRequest(form, saved)` | 폼 vs 저장본 비교 → `{ creates, updates, deletes }` **diff** 생성 |
 | `convertFormToSavedSettings(form)` | 저장 성공 후 폼 → 저장본 모델(삭제표시 제외) |
+| `mapMarketResponseToPriceAlertMarket(res)` | `MarketResponse` → 화면 마켓 모델(`code=marketCode` 매핑) |
 
 - 내부: `convertRateToPercent`(0.03→"3", 옵션에 없으면 기본값), `convertPercentToRate`("3"→0.03), `hasSameSetting`(변경 여부).
 - diff 규칙: 삭제표시 & 저장돼 있으면 `deletes`, 저장 안 됐으면 `creates`, 값 바뀌었으면 `updates`.
