@@ -10,6 +10,7 @@ import "./Header.css";
 type HeaderProps = {
   user: User | null;
   notifications: Notification[];
+  onOpenNotifications: () => void;
   onReadNotification: (notificationId: string) => void;
   onLoadMoreNotifications: () => void;
   hasNextNotification: boolean;
@@ -21,6 +22,7 @@ type HeaderProps = {
 export default function Header({
   user,
   notifications,
+  onOpenNotifications,
   onReadNotification,
   onLoadMoreNotifications,
   hasNextNotification,
@@ -78,6 +80,10 @@ export default function Header({
   }
 
   function handleToggleNotificationMenu() {
+    if (!isNotificationMenuOpen) {
+      onOpenNotifications();
+    }
+
     setIsNotificationMenuOpen((prev) => !prev);
     setIsProfileMenuOpen(false);
   }

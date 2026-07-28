@@ -37,6 +37,7 @@ export default function App() {
   );
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [hasNextNotification, setHasNextNotification] = useState(false);
+  const [hasLoadedNotifications, setHasLoadedNotifications] = useState(false);
   const [isLoadingNotifications, setIsLoadingNotifications] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
@@ -82,6 +83,7 @@ export default function App() {
       setUser(null);
       setNotifications([]);
       setHasNextNotification(false);
+      setHasLoadedNotifications(false);
       setIsLoginModalOpen(true);
     }
 
@@ -121,48 +123,35 @@ export default function App() {
     };
   }, [user]);
 
-  // 로그인 시 알림함 첫 페이지를 불러온다(최신순). 이후 실시간 수신분은 STOMP가 맨 앞에 붙인다.
-  // (로그아웃/세션 만료 시 hasNext 리셋은 각 핸들러에서 처리)
-  useEffect(() => {
-    if (!user) {
+  // 알림 벨을 처음 열 때만 알림함 첫 페이지를 불러온다.
+  async function handleOpenNotifications() {
+    if (
+      !user ||
+      hasLoadedNotifications ||
+      isLoadingNotifications
+    ) {
       return;
     }
 
-    let isCancelled = false;
-
-    async function loadFirstPage() {
-      setIsLoadingNotifications(true);
-      try {
-        const page = await getMyNotifications();
-        if (isCancelled) {
-          return;
-        }
-        const items = page.items.map(mapNotificationResponseToNotification);
-        // 이미 받은 실시간(STOMP) 항목은 맨 위에 유지하고 그 아래에 REST 목록을 둔다.
-        setNotifications((prevNotifications) => {
-          const liveItems = prevNotifications.filter((notification) =>
-            notification.id.startsWith("stomp-"),
-          );
-          return [...liveItems, ...items];
-        });
-        setHasNextNotification(page.hasNext);
-      } catch (error) {
-        if (!isCancelled) {
-          console.error("failed to load notifications:", error);
-        }
-      } finally {
-        if (!isCancelled) {
-          setIsLoadingNotifications(false);
-        }
-      }
+    setIsLoadingNotifications(true);
+    try {
+      const page = await getMyNotifications();
+      const items = page.items.map(mapNotificationResponseToNotification);
+      // 이미 받은 실시간(STOMP) 항목은 맨 위에 유지하고 그 아래에 REST 목록을 둔다.
+      setNotifications((prevNotifications) => {
+        const liveItems = prevNotifications.filter((notification) =>
+          notification.id.startsWith("stomp-"),
+        );
+        return [...liveItems, ...items];
+      });
+      setHasNextNotification(page.hasNext);
+      setHasLoadedNotifications(true);
+    } catch (error) {
+      console.error("failed to load notifications:", error);
+    } finally {
+      setIsLoadingNotifications(false);
     }
-
-    void loadFirstPage();
-
-    return () => {
-      isCancelled = true;
-    };
-  }, [user]);
+  }
 
   // 드롭다운을 아래로 스크롤하면 현재 목록의 가장 오래된(맨 아래) 항목 커서로 다음 페이지를 append 한다.
   async function handleLoadMoreNotifications() {
@@ -225,6 +214,7 @@ export default function App() {
       setUser(null);
       setNotifications([]);
       setHasNextNotification(false);
+      setHasLoadedNotifications(false);
       navigate("/", { replace: true });
     }
   }
@@ -247,6 +237,7 @@ export default function App() {
       <Header
         user={user}
         notifications={notifications}
+        onOpenNotifications={handleOpenNotifications}
         onReadNotification={handleReadNotification}
         onLoadMoreNotifications={handleLoadMoreNotifications}
         hasNextNotification={hasNextNotification}

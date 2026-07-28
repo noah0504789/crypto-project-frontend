@@ -161,10 +161,10 @@
 **페이지가 아니라 앱 전역 기능**이다. 별도 라우트 없이 `App.tsx`(상태) + `Header`(표시)로 동작한다. 관련: `types/notification.ts`, `utils/notificationMapper.ts`.
 
 - **역할**: 서버가 보내는 알림을 헤더 벨(🔔) 드롭다운으로 보여준다. **REST 인박스(과거 알림) + STOMP(실시간)** 를 한 목록으로 합친다.
-- **초기 로드**(`App.tsx`): 로그인 시 `getMyNotifications()`로 **첫 페이지(최신순)** 조회(`apis/notificationApi.ts`). 이미 받은 실시간 항목은 맨 위에 유지하고 그 아래에 REST 목록을 둔다.
+- **초기 로드**(`App.tsx`): 로그인 직후에는 REST 요청을 보내지 않는다. 사용자가 Header의 알림 벨을 처음 열 때 `getMyNotifications()`로 **첫 페이지(최신순)** 조회(`apis/notificationApi.ts`). 이미 받은 실시간 항목은 맨 위에 유지하고 그 아래에 REST 목록을 둔다. 한 번 성공하면 같은 로그인 세션에서는 벨을 다시 열어도 첫 페이지를 재요청하지 않으며, 실패하면 다음 열기에서 재시도한다.
 - **수신**(`App.tsx`): 로그인 상태면 STOMP로 **`/user/topic/notification/`** 구독(`subscribeWebNotifications`). 수신 시 목록 **맨 앞에 추가**. 로그아웃/언마운트 시 `deactivate`.
 - **더 보기(무한 스크롤)**(`Header` 드롭다운): `.notification-list`를 아래로 스크롤해 바닥 근처(40px)면 `onLoadMoreNotifications` → 현재 목록의 **가장 오래된(맨 아래) 항목**의 `recipientId`+`deliveredAtMs` 커서로 다음 페이지를 **append**. `hasNextNotification`false면 "마지막 알림입니다", 로딩 중이면 "불러오는 중..." 표시. (chatroom inbox 커서 방식과 동일)
-- **상태 소유**: `App.tsx`의 `notifications: Notification[]` + `hasNextNotification`·`isLoadingNotifications`.
+- **상태 소유**: `App.tsx`의 `notifications: Notification[]` + `hasNextNotification`·`hasLoadedNotifications`·`isLoadingNotifications`.
   - `handleReadNotification(id: string)` — 해당 알림 `read: true`(클라 전용).
   - 로그아웃/세션 만료 시 `setNotifications([])` + `hasNext` 리셋.
 - **매핑**(`notificationMapper`): REST `NotificationResponse` → `mapNotificationResponseToNotification`(id=`notificationId`, 커서용 `recipientId`·`deliveredAtMs` 보관, 표시 시각은 `deliveredAtMs`). STOMP `WebNotificationEvent{type,title,body,createdAtMs,link,data}` → `mapWebNotificationToNotification`(id=`stomp-{createdAtMs}`로 REST id와 구분). 서버가 `title`/`body` 완성 → 그대로 사용.
