@@ -1,15 +1,26 @@
 import { apiClient } from '@/apis/apiClient';
 import type { User, UserResponse } from '@/types/user';
-import { mapUserResponseToUser } from '@/utils/userMapper'
+import { mapUserResponseToUser } from '@/utils/userMapper';
 
 type UpdateMyProfileRequest = {
   nickname: string;
 };
 
-export async function getMyProfile() {
-  const response = await apiClient.get<UserResponse>('/user/me/profile');
+let myProfileInFlight: Promise<User> | null = null;
 
-  return mapUserResponseToUser(response.data);
+export function getMyProfile(): Promise<User> {
+  if (myProfileInFlight) {
+    return myProfileInFlight;
+  }
+
+  myProfileInFlight = apiClient
+    .get<UserResponse>('/user/me/profile')
+    .then((response) => mapUserResponseToUser(response.data))
+    .finally(() => {
+      myProfileInFlight = null;
+    });
+
+  return myProfileInFlight;
 }
 
 export async function updateMyProfile(request: UpdateMyProfileRequest) {
