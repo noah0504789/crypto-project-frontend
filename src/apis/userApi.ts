@@ -7,13 +7,13 @@ type UpdateMyProfileRequest = {
 };
 
 export async function getMyProfile() {
-  const response = await apiClient.get<UserResponse>('/user/me');
+  const response = await apiClient.get<UserResponse>('/user/me/profile');
 
   return mapUserResponseToUser(response.data);
 }
 
 export async function updateMyProfile(request: UpdateMyProfileRequest) {
-  await apiClient.patch('/user/me', request);
+  await apiClient.patch('/user/me/profile', request);
 }
 
 // 타 유저 프로필(GET /user/{userId}/profile). 백엔드 응답은 /user/me와 동일한 UserResponse.
