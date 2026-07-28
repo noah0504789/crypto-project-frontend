@@ -206,6 +206,7 @@ export default function App() {
   async function handleLogout() {
     try {
       await logout();
+      alert("로그아웃 성공했습니다!");
     } catch (error) {
       console.error("logout failed:", error);
       alert("로그아웃 처리 중 문제가 발생했습니다.");
