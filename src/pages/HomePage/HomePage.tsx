@@ -11,20 +11,20 @@ type HomeFeature = {
 
 const HOME_FEATURES = [
   {
-    to: "/price-alerts",
-    eyebrow: "실시간 탐지",
-    title: "가격 알림",
-    description:
-      "코인별 변화율 임계값을 설정하면 초과하는 순간 실시간으로 알려드려요. 급변하는 시장을 놓치지 마세요.",
-    cta: "알림 설정하기",
-  },
-  {
     to: "/chat",
     eyebrow: "코인별 오픈채팅",
     title: "실시간 채팅",
     description:
       "관심 코인 주제의 오픈채팅방에서 다른 투자자들과 실시간으로 대화하세요. 인기 채팅방부터 내가 만든 방까지.",
     cta: "채팅방 둘러보기",
+  },
+  {
+    to: "/price-alerts",
+    eyebrow: "실시간 탐지",
+    title: "가격 알림",
+    description:
+      "코인별 변화율 임계값을 설정하면 초과하는 순간 실시간으로 알려드려요. 급변하는 시장을 놓치지 마세요.",
+    cta: "알림 설정하기",
   },
 ] as const satisfies readonly HomeFeature[];
 
