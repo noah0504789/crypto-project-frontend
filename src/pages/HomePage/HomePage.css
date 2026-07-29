@@ -1,0 +1,149 @@
+.home-page {
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+/* Hero */
+.home-hero {
+  position: relative;
+  overflow: hidden;
+
+  padding: 56px 40px 48px;
+  margin-bottom: 32px;
+
+  border: 1px solid #e5e7eb;
+  border-radius: 24px;
+
+  background:
+    radial-gradient(
+      120% 120% at 100% 0%,
+      rgba(37, 99, 235, 0.12) 0%,
+      rgba(37, 99, 235, 0) 55%
+    ),
+    linear-gradient(180deg, #ffffff 0%, #f9fafb 100%);
+}
+
+.home-hero-eyebrow {
+  margin: 0 0 16px;
+
+  color: #2563eb;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+}
+
+.home-hero-title {
+  margin: 0;
+
+  color: #111827;
+  font-size: 40px;
+  font-weight: 900;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.home-hero-accent {
+  color: #2563eb;
+}
+
+.home-hero-subtitle {
+  max-width: 540px;
+  margin: 20px 0 0;
+
+  color: #6b7280;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.6;
+}
+
+/* Feature cards */
+.home-features {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+.home-feature-card {
+  display: flex;
+  flex-direction: column;
+
+  padding: 28px 24px;
+
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+
+  background: #ffffff;
+  text-decoration: none;
+
+  transition:
+    border-color 0.15s ease,
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.home-feature-card:hover {
+  border-color: #111827;
+  transform: translateY(-3px);
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.1);
+}
+
+.home-feature-eyebrow {
+  color: #2563eb;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+}
+
+.home-feature-title {
+  margin: 10px 0 0;
+
+  color: #111827;
+  font-size: 20px;
+  font-weight: 900;
+}
+
+.home-feature-description {
+  flex: 1;
+
+  margin: 12px 0 0;
+
+  color: #6b7280;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.6;
+}
+
+.home-feature-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  margin-top: 20px;
+
+  color: #111827;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.home-feature-arrow {
+  font-style: normal;
+  transition: transform 0.15s ease;
+}
+
+.home-feature-card:hover .home-feature-arrow {
+  transform: translateX(4px);
+}
+
+@media (max-width: 768px) {
+  .home-hero {
+    padding: 40px 24px 36px;
+  }
+
+  .home-hero-title {
+    font-size: 30px;
+  }
+
+  .home-features {
+    grid-template-columns: 1fr;
+  }
+}
