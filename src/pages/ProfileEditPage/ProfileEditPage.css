@@ -145,10 +145,27 @@
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
 }
 
+.profile-edit-field input[aria-invalid="true"] {
+  border-color: #dc2626;
+}
+
+.profile-edit-field input[aria-invalid="true"]:focus {
+  border-color: #dc2626;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.12);
+}
+
 .profile-edit-field input:disabled {
   background: #f3f4f6;
   color: #9ca3af;
   cursor: not-allowed;
+}
+
+.profile-edit-field .profile-edit-field-error {
+  margin: 0;
+
+  color: #dc2626;
+  font-size: 13px;
+  font-weight: 700;
 }
 
 .profile-edit-actions {

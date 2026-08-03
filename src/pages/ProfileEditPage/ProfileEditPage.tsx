@@ -1,3 +1,4 @@
+import axios from "axios";
 import { useState, type FormEvent } from "react";
 import { updateMyProfile } from "@/apis/userApi";
 import LoadingButton from "@/components/Button/LoadingButton";
@@ -9,11 +10,31 @@ type ProfileEditPageProps = {
   onUserUpdated: (user: User) => void;
 };
 
+type ValidationErrorResponse = {
+  errors?: Array<{
+    field?: string;
+    message?: string;
+  }>;
+};
+
+function getNicknameValidationMessage(error: unknown): string | null {
+  if (!axios.isAxiosError<ValidationErrorResponse>(error)) {
+    return null;
+  }
+
+  return (
+    error.response?.data.errors?.find(
+      ({ field, message }) => field === "nickname" && message,
+    )?.message ?? null
+  );
+}
+
 export default function ProfileEditPage({
   user,
   onUserUpdated,
 }: ProfileEditPageProps) {
   const [nickname, setNickname] = useState(user?.nickname ?? "");
+  const [nicknameError, setNicknameError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!user) {
@@ -36,6 +57,7 @@ export default function ProfileEditPage({
 
     try {
       setIsSubmitting(true);
+      setNicknameError(null);
 
       await updateMyProfile({
         nickname: trimmedNickname,
@@ -48,8 +70,14 @@ export default function ProfileEditPage({
 
       alert("프로필이 수정되었습니다.");
     } catch (error) {
-      console.error(error);
-      alert("프로필 수정에 실패했습니다.");
+      const validationMessage = getNicknameValidationMessage(error);
+
+      if (validationMessage) {
+        setNicknameError(validationMessage);
+      } else {
+        console.error(error);
+        alert("프로필 수정에 실패했습니다.");
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -69,8 +97,22 @@ export default function ProfileEditPage({
             type="text"
             value={nickname}
             maxLength={20}
-            onChange={(event) => setNickname(event.target.value)}
+            aria-invalid={nicknameError !== null}
+            aria-describedby={nicknameError ? "nickname-error" : undefined}
+            onChange={(event) => {
+              setNickname(event.target.value);
+              setNicknameError(null);
+            }}
           />
+          {nicknameError && (
+            <p
+              id="nickname-error"
+              className="profile-edit-field-error"
+              role="alert"
+            >
+              {nicknameError}
+            </p>
+          )}
         </label>
 
         <label className="profile-edit-field">
