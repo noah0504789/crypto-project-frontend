@@ -60,7 +60,7 @@ export async function getMyChatRooms({
   return response.data;
 }
 
-export async function getChatRoom(roomId: number) {
+export async function getChatRoom(roomId: string) {
   const response = await apiClient.get<ChatRoomDetailResponse>(
     `/chat/room/${roomId}`,
   );
@@ -69,7 +69,7 @@ export async function getChatRoom(roomId: number) {
 }
 
 // 내 채팅방 단건(GET /chat/room/{roomId}/me). 배지 이벤트 방이 목록에 없을 때 prepend용.
-export async function getMyChatRoom(roomId: number) {
+export async function getMyChatRoom(roomId: string) {
   const response = await apiClient.get<MyChatRoom>(`/chat/room/${roomId}/me`);
 
   return response.data;
@@ -80,13 +80,13 @@ export async function createChatRoom(request: CreateChatRoomRequest) {
 }
 
 export async function updateChatRoom(
-  roomId: number,
+  roomId: string,
   request: UpdateChatRoomRequest,
 ) {
   await apiClient.patch(`/chat/room/${roomId}`, request);
 }
 
-export async function leaveChatRoom(roomId: number) {
+export async function leaveChatRoom(roomId: string) {
   await apiClient.delete(`/chat/room/${roomId}/members`);
 }
 
@@ -98,7 +98,7 @@ export function reportActivity({
   lastMsgReadSeq,
   lastMsgCreatedAtMs,
 }: {
-  roomId: number;
+  roomId: string;
   lastMsgReadSeq: number;
   lastMsgCreatedAtMs: number;
 }) {

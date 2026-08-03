@@ -99,7 +99,7 @@ export default function ChatPage({ user }: ChatPageProps) {
     });
   }
 
-  function handleEnterRoom(roomId: number) {
+  function handleEnterRoom(roomId: string) {
     if (!isLoggedIn) {
       alert("로그인이 필요한 서비스입니다.");
       return;

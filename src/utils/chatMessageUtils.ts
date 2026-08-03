@@ -4,8 +4,8 @@ export function createClientMessageId() {
   return `client-${Date.now()}-${crypto.randomUUID()}`;
 }
 
-export function isValidRoomId(roomId: number) {
-  return !Number.isNaN(roomId) && roomId > 0;
+export function isValidRoomId(roomId: string) {
+  return roomId.trim().length > 0;
 }
 
 export function createPendingChatMessage({
@@ -15,14 +15,14 @@ export function createPendingChatMessage({
   content,
   clientMessageId,
 }: {
-  roomId: number;
+  roomId: string;
   writerId: string;
   writerName: string;
   content: string;
   clientMessageId: string;
 }): ChatMessage {
   return {
-    id: Date.now(),
+    id: String(Date.now()),
     roomId,
     writerId,
     writerName,
@@ -55,8 +55,8 @@ export function mapBroadcastEventToChatMessage({
   fallbackWriterName: string;
 }): ChatMessage {
   return {
-    id: Number(event.messageId),
-    roomId: Number(event.roomId),
+    id: event.messageId,
+    roomId: event.roomId,
     writerId: String(event.writerId),
     writerName: fallbackWriterName,
     content: event.content,

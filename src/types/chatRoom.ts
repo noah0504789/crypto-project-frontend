@@ -3,7 +3,7 @@ export const CHAT_ROOM_CATEGORIES = ['CRYPTO_CURRENCY'] as const;
 export type ChatRoomCategory = (typeof CHAT_ROOM_CATEGORIES)[number];
 
 export type PopularChatRoom = {
-  id: number;
+  id: string;
   title: string;
   description: string;
   popularity: number;
@@ -18,7 +18,7 @@ export type PopularChatRoomResponse = {
 };
 
 export type PopularChatRoomCursor = {
-  lastId?: number;
+  lastId?: string;
   lastPopularity?: number;
 };
 
@@ -36,7 +36,7 @@ export type ChatRoomDetailResponse = {
 };
 
 export type MyChatRoom = {
-  id: number;
+  id: string;
   hostId: string;
   title: string;
   category: ChatRoomCategory;
@@ -55,7 +55,7 @@ export type MyChatRoomResponse = {
 export type MyChatRoomCursor = {
   lastUnreadFlag?: boolean;
   lastMsgCreatedAt?: string | null;
-  lastId?: number;
+  lastId?: string;
 };
 
 export type CreateChatRoomRequest = {

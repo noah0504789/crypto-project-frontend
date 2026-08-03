@@ -1,8 +1,8 @@
 export type ChatMessageStatus = 'sent' | 'pending' | 'failed';
 
 export type ChatMessage = {
-  id: number;
-  roomId: number;
+  id: string;
+  roomId: string;
   writerId: string;
   writerName?: string;
   content: string;
@@ -12,8 +12,8 @@ export type ChatMessage = {
 };
 
 export type ChatMessageResponseItem = {
-  id: number;
-  roomId: number;
+  id: string;
+  roomId: string;
   writerId: string;
   writerName?: string;
   content: string;
@@ -26,7 +26,7 @@ export type ChatMessagesResponse = {
 };
 
 export type ChatMessageCursor = {
-  lastId?: number;
+  lastId?: string;
   lastCreatedAtMillis?: number;
 };
 

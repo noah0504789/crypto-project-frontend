@@ -5,7 +5,7 @@ import type {
 } from '@/types/chatMessage';
 
 type GetChatMessagesParams = ChatMessageCursor & {
-  roomId: number;
+  roomId: string;
   limit: number;
 };
 

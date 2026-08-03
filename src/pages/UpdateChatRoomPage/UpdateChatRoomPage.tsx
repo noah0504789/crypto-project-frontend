@@ -29,7 +29,7 @@ export default function UpdateChatRoomPage({ user }: UpdateChatRoomPageProps) {
   const descriptionParam = searchParams.get("description") ?? "";
   const categoryParam = searchParams.get("category") ?? "CRYPTO_CURRENCY";
 
-  const roomId = roomIdParam ? Number(roomIdParam) : NaN;
+  const roomId = roomIdParam ?? "";
 
   const [form, setForm] = useState<UpdateChatRoomForm>({
     title: titleParam,
@@ -42,7 +42,7 @@ export default function UpdateChatRoomPage({ user }: UpdateChatRoomPageProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const isLoggedIn = user !== null;
-  const isInvalidRoomId = Number.isNaN(roomId);
+  const isInvalidRoomId = roomId.trim().length === 0;
 
   function handleChangeTitle(event: React.ChangeEvent<HTMLInputElement>) {
     setForm((prevForm) => ({

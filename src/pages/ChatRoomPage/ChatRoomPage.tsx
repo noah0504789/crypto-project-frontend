@@ -38,7 +38,7 @@ export default function ChatRoomPage({ user }: ChatRoomPageProps) {
   const [searchParams] = useSearchParams();
 
   const roomIdParam = searchParams.get("roomId");
-  const roomId = roomIdParam ? Number(roomIdParam) : NaN;
+  const roomId = roomIdParam ?? "";
 
   const stompClientRef = useRef<Client | null>(null);
   const chatBoxRef = useRef<HTMLDivElement | null>(null);
@@ -498,7 +498,7 @@ export default function ChatRoomPage({ user }: ChatRoomPageProps) {
     }
 
     sendChatMessage(client, {
-      roomId: String(roomId),
+      roomId,
       writerId: String(user.id),
       content,
       clientMessageId,
@@ -561,7 +561,7 @@ export default function ChatRoomPage({ user }: ChatRoomPageProps) {
     }
   }
 
-  function handleRetryMessage(messageId: number) {
+  function handleRetryMessage(messageId: string) {
     const failedMessage = messages.find((message) => message.id === messageId);
 
     if (!failedMessage || !user) {

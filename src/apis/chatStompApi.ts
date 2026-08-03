@@ -29,7 +29,7 @@ export function subscribeChatMessageAck(
 
 export function subscribeChatRoomMessages(
   client: Client,
-  roomId: number,
+  roomId: string,
   onMessage: (event: ChatMessageBroadcastEvent) => void,
 ) {
   return client.subscribe(`/topic/chat/${roomId}`, (message) => {
