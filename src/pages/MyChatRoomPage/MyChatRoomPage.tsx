@@ -314,13 +314,10 @@ export default function MyChatRoomsPage({ user }: MyChatRoomsPageProps) {
                         </span>
                       )}
 
-                      <span className="my-chat-room-meta-item">
-                        ID {room.id}
-                      </span>
+                      <span className="my-chat-room-meta-item">가상화폐</span>
                       <span className="my-chat-room-meta-item">
                         멤버 {room.memberCnt}명
                       </span>
-                      <span className="my-chat-room-meta-item">가상화폐</span>
                     </div>
 
                     <p className="my-chat-room-description">
@@ -335,7 +332,7 @@ export default function MyChatRoomsPage({ user }: MyChatRoomsPageProps) {
                       <em>
                         {room.lastMsgCreatedAt
                           ? formatKoreanChatTime(room.lastMsgCreatedAt)
-                          : "최근 메시지 없음"}
+                          : ""}
                       </em>
                     </div>
                   </div>
