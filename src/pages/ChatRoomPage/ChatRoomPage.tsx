@@ -132,12 +132,12 @@ export default function ChatRoomPage({ user }: ChatRoomPageProps) {
           return;
         }
 
-        const nextMessages = [...response.items]
+        const nextMessages = [...(response.items ?? [])]
           .reverse()
           .map(mapChatMessageResponseItemToChatMessage);
 
         setMessages(nextMessages);
-        setHasNextMessages(response.hasNext);
+        setHasNextMessages(response.hasNext ?? false);
 
         const newestMessage = nextMessages[nextMessages.length - 1];
 
@@ -434,7 +434,7 @@ export default function ChatRoomPage({ user }: ChatRoomPageProps) {
         lastCreatedAtMillis: new Date(oldestMessage.createdAt).getTime(),
       });
 
-      const previousMessages = [...response.items]
+      const previousMessages = [...(response.items ?? [])]
         .reverse()
         .map(mapChatMessageResponseItemToChatMessage);
 
@@ -450,7 +450,7 @@ export default function ChatRoomPage({ user }: ChatRoomPageProps) {
         return [...uniquePreviousMessages, ...prevMessages];
       });
 
-      setHasNextMessages(response.hasNext);
+      setHasNextMessages(response.hasNext ?? false);
 
       requestAnimationFrame(() => {
         const currentChatBox = chatBoxRef.current;
