@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { getPopularChatRooms } from "@/apis/chatRoomApi";
+import { getPopularChatRooms, joinChatRoom } from "@/apis/chatRoomApi";
 import LoadingButton from "@/components/Button/LoadingButton";
 import type { User } from "@/types/user";
 import type { PopularChatRoom, PopularChatRoomCursor } from "@/types/chatRoom";
@@ -23,6 +23,7 @@ export default function ChatPage({ user }: ChatPageProps) {
   const [hasNext, setHasNext] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [enteringRoomId, setEnteringRoomId] = useState<string | null>(null);
 
   const isLoggedIn = user !== null;
 
@@ -105,7 +106,17 @@ export default function ChatPage({ user }: ChatPageProps) {
       return;
     }
 
-    navigate(`/chat/room?roomId=${roomId}`);
+    setEnteringRoomId(roomId);
+
+    joinChatRoom(roomId)
+      .then(() => {
+        navigate(`/chat/room?roomId=${roomId}`);
+      })
+      .catch((error) => {
+        console.error(error);
+        alert("채팅방 입장에 실패했습니다. 다시 시도해 주세요.");
+        setEnteringRoomId(null);
+      });
   }
 
   return (
@@ -158,13 +169,15 @@ export default function ChatPage({ user }: ChatPageProps) {
                   </div>
                 </div>
 
-                <button
-                  type="button"
+                <LoadingButton
+                  isLoading={enteringRoomId === room.id}
+                  loadingText="입장 중..."
                   className="popular-chat-room-enter-button"
+                  disabled={enteringRoomId !== null}
                   onClick={() => handleEnterRoom(room.id)}
                 >
                   입장하기
-                </button>
+                </LoadingButton>
               </article>
             ))}
           </div>
