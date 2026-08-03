@@ -40,8 +40,8 @@ export default function ChatPage({ user }: ChatPageProps) {
           return;
         }
 
-        setPopularChatRooms(response.items);
-        setHasNext(response.hasNext);
+        setPopularChatRooms(response.items ?? []);
+        setHasNext(response.hasNext ?? false);
       } catch (error) {
         console.error("failed to load popular chat rooms:", error);
 
@@ -74,8 +74,11 @@ export default function ChatPage({ user }: ChatPageProps) {
         lastPopularity: cursor.lastPopularity,
       });
 
-      setPopularChatRooms((prevRooms) => [...prevRooms, ...response.items]);
-      setHasNext(response.hasNext);
+      setPopularChatRooms((prevRooms) => [
+        ...prevRooms,
+        ...(response.items ?? []),
+      ]);
+      setHasNext(response.hasNext ?? false);
     } catch (error) {
       console.error("failed to load more popular chat rooms:", error);
     } finally {
