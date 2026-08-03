@@ -138,13 +138,13 @@ export default function ChatPage({ user }: ChatPageProps) {
       ) : popularChatRooms.length > 0 ? (
         <>
           <div className="popular-chat-room-list">
-            {popularChatRooms.map((room) => (
+            {popularChatRooms.map((room, index) => (
               <article key={room.id} className="popular-chat-room-card">
                 <div className="popular-chat-room-main">
                   <div className="popular-chat-room-title-row">
                     <h2>{room.title}</h2>
                     <span className="popular-chat-room-badge">
-                      인기 {room.popularity}
+                      인기 {index + 1}위
                     </span>
                   </div>
 
@@ -154,7 +154,6 @@ export default function ChatPage({ user }: ChatPageProps) {
 
                   <div className="popular-chat-room-meta">
                     <span>멤버 {room.memberCnt}명</span>
-                    <span>방장 #{room.hostId}</span>
                     <span>{formatKoreanDateTime(room.createdAt)}</span>
                   </div>
                 </div>
