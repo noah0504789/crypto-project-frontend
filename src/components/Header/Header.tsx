@@ -128,9 +128,9 @@ export default function Header({
       </div>
 
       <nav className="header-nav" aria-label="주요 메뉴">
-        <Link to="/chat" className="header-nav-link" aria-label="채팅으로 이동">
+        <Link to="/chat" className="header-nav-link" aria-label="인기 채팅으로 이동">
           <span className="header-nav-icon">💬</span>
-          <span>채팅</span>
+          <span>인기 채팅</span>
         </Link>
 
         <Link
@@ -242,6 +242,10 @@ export default function Header({
                 </div>
               )}
             </div>
+
+            <Link to="/chat/my" className="my-chat-link" aria-label="내 채팅방">
+              <span className="my-chat-link-icon">📥</span>
+            </Link>
 
             <div className="profile-menu-wrapper" ref={profileMenuRef}>
               <button

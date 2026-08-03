@@ -131,10 +131,6 @@ export default function ChatPage({ user }: ChatPageProps) {
 
         {isLoggedIn && (
           <div className="chat-page-actions">
-            <Link to="/chat/my" className="my-chat-button">
-              내 채팅방
-            </Link>
-
             <Link to="/chat/create" className="create-chat-room-button">
               채팅방 생성
             </Link>
