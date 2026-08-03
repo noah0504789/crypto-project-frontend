@@ -86,6 +86,12 @@ export async function updateChatRoom(
   await apiClient.patch(`/chat/room/${roomId}`, request);
 }
 
+// 방 입장 시 멤버십 등록(POST /chat/room/{roomId}/members). 멱등(신규 201, 기존 204).
+// 백엔드 memberIds에 등록돼야 메시지 전송(gRPC save) 시 validateWritable을 통과한다.
+export async function joinChatRoom(roomId: string) {
+  await apiClient.post(`/chat/room/${roomId}/members`);
+}
+
 export async function leaveChatRoom(roomId: string) {
   await apiClient.delete(`/chat/room/${roomId}/members`);
 }
