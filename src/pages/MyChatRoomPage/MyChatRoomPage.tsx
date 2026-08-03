@@ -3,7 +3,12 @@ import { useNavigate } from "react-router-dom";
 import type { User } from "@/types/user";
 import type { MyChatRoom, MyChatRoomCursor } from "@/types/chatRoom";
 import { formatKoreanChatTime } from "@/utils/dateFormatter";
-import { getMyChatRoom, getMyChatRooms, leaveChatRoom } from "@/apis/chatRoomApi";
+import {
+  getMyChatRoom,
+  getMyChatRooms,
+  leaveChatRoom,
+  waitForPendingActivityReports,
+} from "@/apis/chatRoomApi";
 import { createStompClient } from "@/apis/stompClient";
 import { subscribeMyChatRoomBadge } from "@/apis/chatStompApi";
 import LoadingButton from "@/components/Button/LoadingButton";
@@ -46,6 +51,12 @@ export default function MyChatRoomsPage({ user }: MyChatRoomsPageProps) {
 
     async function loadInitialMyChatRooms() {
       try {
+        await waitForPendingActivityReports();
+
+        if (isCancelled) {
+          return;
+        }
+
         const response = await getMyChatRooms({
           limit: MY_CHAT_ROOM_LIMIT,
         });

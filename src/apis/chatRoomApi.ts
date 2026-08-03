@@ -12,6 +12,9 @@ import type {
   MyChatRoomResponse,
 } from '@/types/chatRoom';
 
+const pendingActivityReports = new Set<Promise<void>>();
+const ACTIVITY_REPORT_MAX_WAIT_MS = 1500;
+
 type GetPopularChatRoomsParams = PopularChatRoomCursor & {
   limit: number;
   category: string;
@@ -115,10 +118,37 @@ export function reportActivity({
     lastMsgCreatedAtMs: String(lastMsgCreatedAtMs),
   });
 
-  void fetch(`${GATEWAY_URL}/chat/room/${roomId}/activity?${query.toString()}`, {
-    method: 'PUT',
-    headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
-    credentials: 'include',
-    keepalive: true,
-  }).catch(() => {});
+  const request = fetch(
+    `${GATEWAY_URL}/chat/room/${roomId}/activity?${query.toString()}`,
+    {
+      method: 'PUT',
+      headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+      credentials: 'include',
+      keepalive: true,
+    },
+  )
+    .then(() => undefined)
+    .catch(() => undefined)
+    .finally(() => {
+      pendingActivityReports.delete(request);
+    });
+
+  pendingActivityReports.add(request);
+
+  return request;
+}
+
+export async function waitForPendingActivityReports() {
+  const reports = [...pendingActivityReports];
+
+  if (reports.length === 0) {
+    return;
+  }
+
+  await Promise.race([
+    Promise.allSettled(reports),
+    new Promise<void>((resolve) => {
+      setTimeout(resolve, ACTIVITY_REPORT_MAX_WAIT_MS);
+    }),
+  ]);
 }
