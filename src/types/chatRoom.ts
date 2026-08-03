@@ -70,13 +70,10 @@ export type UpdateChatRoomRequest = {
   category: ChatRoomCategory;
 };
 
-export type MyChatRoomBadgePayload = {
-  id: string;
-  memberIds: string[];
+// STOMP /user/queue/chat/badge 수신 payload(백엔드 StompMyChatRoomBadgePayload).
+// convertAndSendToUser로 멤버별 전송되므로 flat이며 memberIds는 없다.
+export type MyChatRoomBadgeEvent = {
+  roomId: string;
   lastMsgContent: string;
   lastMsgCreatedAt: string;
-};
-
-export type MyChatRoomBadgeEvent = {
-  payload: MyChatRoomBadgePayload;
 };

@@ -110,16 +110,9 @@ export default function MyChatRoomsPage({ user }: MyChatRoomsPageProps) {
 
     client.onConnect = () => {
       subscribeMyChatRoomBadge(client, (event) => {
-        const roomId = event.payload.id;
+        const roomId = event.roomId;
 
         if (!roomId) {
-          return;
-        }
-
-        if (
-          event.payload.memberIds.length > 0 &&
-          !event.payload.memberIds.includes(String(userId))
-        ) {
           return;
         }
 
@@ -140,8 +133,8 @@ export default function MyChatRoomsPage({ user }: MyChatRoomsPageProps) {
           const updatedRoom: MyChatRoom = {
             ...targetRoom,
             unreadMsgCnt: targetRoom.unreadMsgCnt + 1,
-            lastMsgContent: event.payload.lastMsgContent,
-            lastMsgCreatedAt: event.payload.lastMsgCreatedAt,
+            lastMsgContent: event.lastMsgContent,
+            lastMsgCreatedAt: event.lastMsgCreatedAt,
           };
 
           const remainingRooms = prevRooms.filter(
