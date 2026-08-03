@@ -54,8 +54,8 @@ export default function MyChatRoomsPage({ user }: MyChatRoomsPageProps) {
           return;
         }
 
-        setMyChatRooms(response.items);
-        setHasNext(response.hasNext);
+        setMyChatRooms(response.items ?? []);
+        setHasNext(response.hasNext ?? false);
         setLoadError(false);
       } catch (error) {
         console.error("failed to load my chat rooms:", error);
@@ -171,8 +171,11 @@ export default function MyChatRoomsPage({ user }: MyChatRoomsPageProps) {
         lastId: cursor.lastId,
       });
 
-      setMyChatRooms((prevRooms) => [...prevRooms, ...response.items]);
-      setHasNext(response.hasNext);
+      setMyChatRooms((prevRooms) => [
+        ...prevRooms,
+        ...(response.items ?? []),
+      ]);
+      setHasNext(response.hasNext ?? false);
     } catch (error) {
       console.error("failed to load more my chat rooms:", error);
     } finally {
