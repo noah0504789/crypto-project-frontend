@@ -25,7 +25,7 @@
 | 내 채팅방 목록 | `GET /chat/rooms/me` | `limit, lastUnreadFlag, lastMsgCreatedAt, lastId` | 2xx |
 | 내 채팅방 단건 | `GET /chat/room/{roomId}/me` | — | 2xx |
 | 방 상세 | `GET /chat/room/{roomId}` | — | 200 |
-| 방 메시지 | `GET /chat/room/{roomId}/messages` | `limit, lastId, lastCreatedAtMillis` | 2xx |
+| 방 메시지 | `GET /chat/room/{roomId}/messages` | `limit, lastMsgId, lastCreatedAtMs` | 2xx |
 | 방 생성 | `POST /chat/room` | `{title, description, category}` | 201 |
 | 방 수정 | `PATCH /chat/room/{roomId}` | 변경 필드만 `{title?, description?, category?}` | 204 |
 | 방 입장(가입) | `POST /chat/room/{roomId}/members` | — | 201·204 |
@@ -82,7 +82,7 @@
 ### 채팅 메시지 (`apis/chatMessageApi.ts`)
 | 프론트 | 요청 | 응답 |
 | --- | --- | --- |
-| `getChatMessages` | `GET /chat/room/{roomId}/messages?limit&lastId&lastCreatedAtMillis` | `ChatMessagesResponse { items: ChatMessageResponseItem[], hasNext }` |
+| `getChatMessages` | `GET /chat/room/{roomId}/messages?limit&lastMsgId&lastCreatedAtMs` | `ChatMessagesResponse { items: ChatMessageResponseItem[], hasNext }` |
 
 `items`는 **최신순(newest-first)**으로 온다(백엔드 확인). 프론트는 `reverse()` 후 오래된→최신 순으로 렌더한다(`ChatRoomPage`). 이전 메시지 커서 로딩은 첫 항목 커서로 요청. 백엔드 근거: `chat-adapter-out/.../persistence/MongoChatMessageAdapter.listLatestMessages`(첫 페이지, `Sort DESC createdAt, DESC _id`) + `MongoChatMessageRepositoryImpl.listMessagesBefore`(커서, `desc(createdAt), desc(_id)`).
 

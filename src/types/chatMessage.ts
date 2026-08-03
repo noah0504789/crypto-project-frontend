@@ -26,8 +26,8 @@ export type ChatMessagesResponse = {
 };
 
 export type ChatMessageCursor = {
-  lastId?: string;
-  lastCreatedAtMillis?: number;
+  lastMsgId?: string;
+  lastCreatedAtMs?: number;
 };
 
 export type ChatMessageRequest = {

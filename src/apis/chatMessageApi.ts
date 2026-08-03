@@ -12,16 +12,16 @@ type GetChatMessagesParams = ChatMessageCursor & {
 export async function getChatMessages({
   roomId,
   limit,
-  lastId,
-  lastCreatedAtMillis,
+  lastMsgId,
+  lastCreatedAtMs,
 }: GetChatMessagesParams) {
   const response = await apiClient.get<ChatMessagesResponse>(
     `/chat/room/${roomId}/messages`,
     {
       params: {
         limit,
-        lastId,
-        lastCreatedAtMillis,
+        lastMsgId,
+        lastCreatedAtMs,
       },
     },
   );

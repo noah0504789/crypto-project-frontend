@@ -430,8 +430,8 @@ export default function ChatRoomPage({ user }: ChatRoomPageProps) {
       const response = await getChatMessages({
         roomId,
         limit: MESSAGE_LIMIT,
-        lastId: oldestMessage.id,
-        lastCreatedAtMillis: new Date(oldestMessage.createdAt).getTime(),
+        lastMsgId: oldestMessage.id,
+        lastCreatedAtMs: new Date(oldestMessage.createdAt).getTime(),
       });
 
       const previousMessages = [...(response.items ?? [])]

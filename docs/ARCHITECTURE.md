@@ -105,7 +105,7 @@ ChatPage(useEffect)
 - **커서 페이지네이션** — 모든 목록이 오프셋이 아닌 커서 방식. 마지막 아이템의 정렬키를 다음 요청 커서로 전달.
   - 인기 채팅방: `lastId` + `lastPopularity`
   - 내 채팅방: `lastUnreadFlag` + `lastMsgCreatedAt` + `lastId`
-  - 채팅 메시지: `lastId` + `lastCreatedAtMillis`(위로 스크롤 → 이전 메시지 prepend + 스크롤 위치 보정)
+  - 채팅 메시지: `lastMsgId` + `lastCreatedAtMs`(위로 스크롤 → 이전 메시지 prepend + 스크롤 위치 보정)
 - **낙관적 UI(채팅 전송)** — 전송 즉시 `pending` 메시지를 붙이고 `clientMessageId`로 서버 브로드캐스트와 매칭해 치환. ACK 실패/발행 실패 시 `failed` + 재전송. 상태 모델 `pending → sent | failed`.
 - **인터셉터 기반 횡단 관심사** — 인증(토큰 첨부/재발급)을 각 호출이 아니라 `apiClient` 한 곳에서 처리.
 - **비동기 이펙트 취소** — 데이터 로딩 `useEffect`는 `isCancelled` 플래그로 언마운트 후 setState 방지.
