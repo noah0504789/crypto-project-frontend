@@ -38,6 +38,16 @@ npm run preview  # 빌드 결과 미리보기
 | 컴포넌트/페이지/유틸 작성·수정, 네이밍, 파일 구조 | `.claude/rules/code-style.md` |
 | 신규 백엔드 연동(REST/STOMP) 추가, api 모듈 작성 | `.claude/rules/backend-integration.md` |
 
+## 서브에이전트 (`.claude/agents/`)
+컨텍스트를 분리해야 이득인 작업(중간 읽기량이 크고 결론은 작은 작업)만 위임한다. 규칙·계약의 정본은 `.claude/rules/`와 `docs/`이며 에이전트는 그것을 자기 컨텍스트에서 실행할 뿐이다.
+
+| 에이전트 | 언제 |
+| --- | --- |
+| `frontend-explorer` | 화면→apis→types→utils 흐름 추적, 백엔드 계약의 프론트 소비 지점 파악(읽기 전용) |
+| `frontend-verifier` | `npm run build`(타입 체크) + `npm run lint` 실행 후 에러 압축 보고 |
+
+코드 수정은 서브에이전트에 위임하지 않는다. 백엔드·인프라까지 걸친 요청의 조사 순서는 `../crypto-project-backend/.claude/skills/cross-repo-impact/SKILL.md`를 따른다.
+
 ## 작업 절차
 1. 관련 문서/규칙 확인 (`docs/`, `.claude/rules/`)
 2. 전체 호출 흐름 파악 — 페이지 → `apis/*` → 타입, 또는 STOMP 구독 경로
