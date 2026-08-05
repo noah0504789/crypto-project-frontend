@@ -123,7 +123,49 @@ export default function App() {
     };
   }, [user]);
 
-  // 알림 벨을 처음 열 때만 알림함 첫 페이지를 불러온다.
+  // 로그인 상태가 되면 최신 알림을 조회해 서버의 안 읽음 상태를 헤더 배지에 반영한다.
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+
+    let isCancelled = false;
+
+    async function loadInitialNotifications() {
+      setIsLoadingNotifications(true);
+      try {
+        const page = await getMyNotifications();
+
+        if (isCancelled) {
+          return;
+        }
+
+        const items = page.items.map(mapNotificationResponseToNotification);
+        setNotifications((prevNotifications) => {
+          const liveItems = prevNotifications.filter((notification) =>
+            notification.id.startsWith("stomp-"),
+          );
+          return [...liveItems, ...items];
+        });
+        setHasNextNotification(page.hasNext);
+        setHasLoadedNotifications(true);
+      } catch (error) {
+        console.error("failed to load notifications:", error);
+      } finally {
+        if (!isCancelled) {
+          setIsLoadingNotifications(false);
+        }
+      }
+    }
+
+    void loadInitialNotifications();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [user]);
+
+  // 로그인 직후 조회가 실패했으면 알림 벨을 열 때 첫 페이지를 다시 불러온다.
   async function handleOpenNotifications() {
     if (
       !user ||
