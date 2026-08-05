@@ -11,7 +11,7 @@ type HeaderProps = {
   user: User | null;
   notifications: Notification[];
   onOpenNotifications: () => void;
-  onReadNotification: (notificationId: string) => void;
+  onReadNotification: (notificationId: string) => Promise<void>;
   onLoadMoreNotifications: () => void;
   hasNextNotification: boolean;
   isLoadingNotifications: boolean;
@@ -88,8 +88,10 @@ export default function Header({
     setIsProfileMenuOpen(false);
   }
 
-  function handleClickNotification(notification: Notification) {
-    onReadNotification(notification.id);
+  async function handleClickNotification(notification: Notification) {
+    if (!notification.read) {
+      await onReadNotification(notification.id);
+    }
 
     if (notification.link) {
       setIsNotificationMenuOpen(false);

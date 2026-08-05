@@ -101,11 +101,12 @@
 | 프론트 | 요청 | 응답 |
 | --- | --- | --- |
 | `getMyNotifications({limit, lastRecipientId?, lastDeliveredAtMs?})` | `GET /notifications/me?limit&lastRecipientId&lastDeliveredAtMs` | `NotificationsResponse { items: NotificationResponse[], hasNext }` |
+| `markNotificationAsRead(notificationId)` | `PATCH /notifications/{notificationId}/read` | **204**. 수신자의 안 읽은 알림이 없으면 404 |
 
 - **커서 페이지네이션**: `deliveredAt DESC, _id DESC` 정렬(최신 먼저). 다음 페이지는 현재 목록의 **가장 오래된(맨 아래)** 항목의 `recipientId`(= `lastRecipientId`) + `deliveredAtMs`(= `lastDeliveredAtMs`)로 요청. 커서 없으면 첫 페이지.
 - `NotificationResponse`: `{ id(=notificationId), recipientId, title, message, messageParts[], read, readAt, deliveredAt, deliveredAtMs, createdAt, link }`. **`deliveredAtMs`는 epoch millis(커서 정본)** — `deliveredAt`(LocalDateTime 문자열, `Asia/Seoul`)의 zone 모호성을 피하려고 백엔드가 millis도 함께 내려준다.
 - 사용자 식별은 `X-User-Id`(게이트웨이 주입) → 프론트는 `apiClient`(Bearer)만. 게이트웨이 인가: `/notifications/**` `hasRole(USER)`.
-- 화면 매핑: `mapNotificationResponseToNotification`(`utils/notificationMapper.ts`) → `Notification`(id=notificationId, `recipientId`·`deliveredAtMs`는 다음 커서용으로 보관). 실시간 STOMP 수신분과 구분되게 STOMP 항목 id는 `stomp-{createdAtMs}`.
+- 화면 매핑: `mapNotificationResponseToNotification`(`utils/notificationMapper.ts`) → `Notification`(id=notificationId, `recipientId`·`deliveredAtMs`는 다음 커서용으로 보관). REST와 STOMP는 같은 `notificationId`를 쓰며 프론트에서 id 기준으로 중복 제거한다.
 - 백엔드 근거: `notification/notification-adapter-in/.../web/{NotificationController,dto/NotificationResponse,dto/NotificationCursor}.java`. `deliveredAtMs = deliveredAt.atZone(Asia/Seoul).toInstant().toEpochMilli()`.
 
 ## 3. STOMP (`apis/chatStompApi.ts`, `stompClient.ts`)
@@ -137,9 +138,9 @@
 - **채널: STOMP**(SSE 아님). 백엔드가 사용자별로 `convertAndSendToUser(receiverId, "/topic/notification/", payload)`로 보낸다 → 클라이언트 **구독 destination = `/user/topic/notification/`**(user-destination). 로컬 세션이 있는 대상에게만 push.
 - **wire payload** `StompWebNotificationPayload` = 프론트 `WebNotificationEvent`:
   ```
-  { type: string, title: string, body: string,
+  { notificationId: string, type: string, title: string, body: string,
     createdAtMs: number(epoch millis, long), link: string, data?: Record<string, unknown> }
   ```
   `title`/`body`는 서버가 표시용으로 완성해 보낸다(프론트에서 재조립 불필요).
-- **프론트 구현**: 로그인 시 `App`이 STOMP로 `/user/topic/notification/` 구독(`apis/notificationStompApi.ts`) → `mapWebNotificationToNotification`으로 `Notification` 변환 → `Header` 벨 드롭다운. `id`는 `createdAtMs` 사용, `link` 있으면 클릭 시 이동.
+- **프론트 구현**: 로그인 시 `App`이 STOMP로 `/user/topic/notification/` 구독(`apis/notificationStompApi.ts`) → `mapWebNotificationToNotification`으로 `Notification` 변환 → `Header` 벨 드롭다운. `id`는 `notificationId`를 사용하고, `link`가 있으면 읽음 처리 후 이동.
 - 백엔드 근거: `websocket-gateway-adapter-out/.../notification/adapter/out/stomp/StompWebNotificationAdapter.java`(`convertAndSendToUser`, `NOTIFICATION_PREFIX = "/topic/notification/"`) + `.../stomp/payload/StompWebNotificationPayload.java`. 흐름: `notification`이 Kafka `web-notification-broadcast-event` 발행 → websocket-gateway 소비(`WebNotificationEventMapper` → command) → 위 STOMP 전송.

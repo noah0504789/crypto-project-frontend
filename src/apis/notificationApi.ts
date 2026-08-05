@@ -30,3 +30,7 @@ export async function getMyNotifications({
 
   return response.data;
 }
+
+export async function markNotificationAsRead(notificationId: string) {
+  await apiClient.patch(`/notifications/${notificationId}/read`);
+}

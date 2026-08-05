@@ -21,6 +21,7 @@ export type Notification = {
 // 백엔드 StompWebNotificationPayload. 구독 destination: /user/topic/notification/
 // title/body는 서버가 표시용으로 완성해 보낸다. data는 부가 정보(현재 미사용).
 export type WebNotificationEvent = {
+  notificationId: string;
   type: string;
   title: string;
   body: string;

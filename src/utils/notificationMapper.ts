@@ -8,9 +8,7 @@ export function mapWebNotificationToNotification(
   event: WebNotificationEvent,
 ): Notification {
   return {
-    // wire에 id가 없어 createdAtMs 기반 문자열을 식별자로 쓴다(읽음 토글·React key용).
-    // REST 항목 id(notificationId)와 id 공간이 겹치지 않도록 stomp- 접두사를 붙인다.
-    id: `stomp-${event.createdAtMs}`,
+    id: event.notificationId,
     title: event.title,
     message: event.body,
     link: event.link ? event.link : undefined,

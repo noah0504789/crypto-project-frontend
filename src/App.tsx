@@ -7,7 +7,10 @@ import { logout } from "@/apis/authApi";
 import { getMyProfile } from "@/apis/userApi";
 import { createStompClient } from "@/apis/stompClient";
 import { subscribeWebNotifications } from "@/apis/notificationStompApi";
-import { getMyNotifications } from "@/apis/notificationApi";
+import {
+  getMyNotifications,
+  markNotificationAsRead,
+} from "@/apis/notificationApi";
 import {
   mapNotificationResponseToNotification,
   mapWebNotificationToNotification,
@@ -109,10 +112,14 @@ export default function App() {
       subscribeWebNotifications(client, (event) => {
         const notification = mapWebNotificationToNotification(event);
 
-        setNotifications((prevNotifications) => [
-          notification,
-          ...prevNotifications,
-        ]);
+        setNotifications((prevNotifications) => {
+          const alreadyExists = prevNotifications.some(
+            (item) => item.id === notification.id,
+          );
+          return alreadyExists
+            ? prevNotifications
+            : [notification, ...prevNotifications];
+        });
       });
     };
 
@@ -142,8 +149,9 @@ export default function App() {
 
         const items = page.items.map(mapNotificationResponseToNotification);
         setNotifications((prevNotifications) => {
-          const liveItems = prevNotifications.filter((notification) =>
-            notification.id.startsWith("stomp-"),
+          const loadedIds = new Set(items.map((notification) => notification.id));
+          const liveItems = prevNotifications.filter(
+            (notification) => !loadedIds.has(notification.id),
           );
           return [...liveItems, ...items];
         });
@@ -181,8 +189,9 @@ export default function App() {
       const items = page.items.map(mapNotificationResponseToNotification);
       // 이미 받은 실시간(STOMP) 항목은 맨 위에 유지하고 그 아래에 REST 목록을 둔다.
       setNotifications((prevNotifications) => {
-        const liveItems = prevNotifications.filter((notification) =>
-          notification.id.startsWith("stomp-"),
+        const loadedIds = new Set(items.map((notification) => notification.id));
+        const liveItems = prevNotifications.filter(
+          (notification) => !loadedIds.has(notification.id),
         );
         return [...liveItems, ...items];
       });
@@ -262,17 +271,22 @@ export default function App() {
     }
   }
 
-  function handleReadNotification(notificationId: string) {
-    setNotifications((prevNotifications) =>
-      prevNotifications.map((notification) =>
-        notification.id === notificationId
-          ? {
-              ...notification,
-              read: true,
-            }
-          : notification,
-      ),
-    );
+  async function handleReadNotification(notificationId: string) {
+    try {
+      await markNotificationAsRead(notificationId);
+      setNotifications((prevNotifications) =>
+        prevNotifications.map((notification) =>
+          notification.id === notificationId
+            ? {
+                ...notification,
+                read: true,
+              }
+            : notification,
+        ),
+      );
+    } catch (error) {
+      console.error("failed to mark notification as read:", error);
+    }
   }
 
   return (
