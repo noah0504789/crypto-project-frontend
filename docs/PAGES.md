@@ -137,10 +137,10 @@
 - **기능**:
   - 마운트 시 `getMarkets`(활성 마켓)·`getMyPriceAlertSettings`(내 설정)를 병렬 조회해 폼 구성.
   - 마켓 추가 모달(멀티 선택) → 폼에 카드 추가.
-  - 카드별: 알림 on/off, 변화율 기준 선택(3%/5%/7%), 삭제 표시.
+  - 카드별: 알림 on/off, 변화율 기준 선택(0%/3%/5%/7%), 삭제 표시.
   - "처음상태"(미저장 변경 되돌리기), "내 알람 설정하기"(저장).
   - 저장은 현재 폼과 저장본을 비교해 **creates/updates/deletes로 diff**(`convertFormToRequest`) → `updateMyPriceAlertSettings`(`PUT /price-alerts/me`).
-- **데이터 규칙**: 화면은 퍼센트("3"), 서버는 비율(0.03). 변환은 `priceAlertMapper`.
+- **데이터 규칙**: 화면은 퍼센트("0"/"3"), 서버는 비율(0.00/0.03). 변환은 `priceAlertMapper`.
 - **API**: `getMarkets`, `getMyPriceAlertSettings`, `updateMyPriceAlertSettings`(`apis/priceAlertApi.ts`).
 - **플로우**:
   ```

@@ -1,4 +1,5 @@
 export const PRICE_ALERT_TARGET_CHANGE_RATE_PERCENT_OPTIONS = [
+  '0',
   '3',
   '5',
   '7',
@@ -49,7 +50,7 @@ export type PriceAlertSettingForm = {
 
   /**
    * 화면 선택용 퍼센트 값
-   * 예: "3" = 3%
+   * 예: "0" = 0%, "3" = 3%
    */
   targetChangeRatePercent: PriceAlertTargetChangeRatePercent;
 };

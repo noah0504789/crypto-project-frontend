@@ -93,7 +93,7 @@
 | `getMyPriceAlertSettings()` | `GET /price-alerts/me` | `{ settings: [{ code, enabled, targetChangeRate }] }`(`targetChangeRate`는 BigDecimal→JSON 숫자) |
 | `updateMyPriceAlertSettings(req)` | `PUT /price-alerts/me` `{ creates[], updates[], deletes[] }` | **204**. create/update 항목 `{ code, enabled, targetChangeRate }`, delete 항목 `{ code }` |
 
-- `targetChangeRate`는 **비율**(0.03 = 3%). 화면 퍼센트("3")↔비율 변환은 `priceAlertMapper.ts`. 백엔드 검증: `0.01 ≤ targetChangeRate ≤ 1.00`(`@DecimalMin`/`@DecimalMax`).
+- `targetChangeRate`는 **비율**(0.00 = 0%, 0.03 = 3%). 화면 퍼센트("0"/"3")↔비율 변환은 `priceAlertMapper.ts`. 백엔드 검증: `0.00 ≤ targetChangeRate ≤ 1.00`(`@DecimalMin`/`@DecimalMax`).
 - 사용자 식별은 게이트웨이가 넣는 `X-User-Id`(UUID publicId)로 서버가 판단 → 프론트는 `apiClient`(Bearer)만 쓰면 된다.
 - 백엔드 근거: `market/market-adapter-in/.../web/{MarketController,PriceAlertSettingController}.java`, DTO `MarketResponse`·`MyPriceAlertSettingsResponse`·`PriceAlertSettingChangeRequest`.
 

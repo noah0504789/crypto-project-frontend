@@ -18,8 +18,8 @@ export function mapMarketResponseToPriceAlertMarket(
   };
 }
 
-const DEFAULT_TARGET_CHANGE_RATE_PERCENT =
-  PRICE_ALERT_TARGET_CHANGE_RATE_PERCENT_OPTIONS[0];
+const DEFAULT_TARGET_CHANGE_RATE_PERCENT: PriceAlertTargetChangeRatePercent =
+  '3';
 
 function isPriceAlertTargetChangeRatePercent(
   value: string,
