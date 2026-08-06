@@ -11,6 +11,14 @@ export function mapWebNotificationToNotification(
     id: event.notificationId,
     title: event.title,
     message: event.body,
+    messageParts:
+      event.messageParts?.length > 0
+        ? event.messageParts.map((part) => ({
+            text: part.text,
+            bold: part.bold,
+            lineBreakAfter: part.lineBreakAfter,
+          }))
+        : undefined,
     link: event.link ? event.link : undefined,
     createdAt: new Date(event.createdAtMs).toISOString(),
     read: false,

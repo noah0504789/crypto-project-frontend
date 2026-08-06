@@ -27,6 +27,7 @@ export type WebNotificationEvent = {
   body: string;
   createdAtMs: number;
   link: string | null;
+  messageParts: NotificationMessagePartResponse[];
   data?: Record<string, unknown>;
 };
 
