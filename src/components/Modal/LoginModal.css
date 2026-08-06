@@ -9,7 +9,6 @@
 
   padding: 24px;
   background: rgba(15, 23, 42, 0.48);
-  backdrop-filter: blur(4px);
 }
 
 .login-modal {
