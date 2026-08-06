@@ -19,7 +19,7 @@ export async function getMyPriceAlertSettings() {
     '/price-alerts/me',
   );
 
-  return response.data.settings;
+  return response.data?.settings ?? [];
 }
 
 // 내 가격 알림 설정 저장(PUT /price-alerts/me). 바디는 creates/updates/deletes diff. 성공 204.
