@@ -116,20 +116,25 @@
 | 방향 | destination | 페이로드 |
 | --- | --- | --- |
 | 발행 | `/msg/chat.send` | `ChatMessageRequest { clientMessageId, roomId, writerId, content }` |
-| 구독 | `/topic/chat/{roomId}` | **flat** `{ messageId, roomId, writerId, content, timestamp, clientMessageId }` (본인 발행분은 `clientMessageId`가 `mySent`에 있으면 스킵) |
+| 구독 | `/topic/chat/{roomId}` | **봉투** `{ roomId, messages[] }` — 각 원소가 `{ messageId, roomId, writerId, content, timestamp, clientMessageId }` (본인 발행분은 `clientMessageId`가 `mySent`에 있으면 스킵) |
 | 구독 | `/user/queue/chat/ack` | `ChatMessageAck { id, clientMessageId, success, ts, errors }` |
 | 구독 | `/user/queue/chat/badge` | 배지 이벤트 `{ id, lastMsgContent, lastMsgCreatedAt }` |
 
-- **방 브로드캐스트 payload(백엔드 소스로 확정)**: `/topic/chat/{roomId}`로 실제 전송되는 wire 형태는 **flat record**다:
+- **방 브로드캐스트 payload**: `/topic/chat/{roomId}` 로 오는 wire 는 **봉투**다. 게이트웨이가 같은 방의 메시지를 시간창(100ms)으로 묶어 보내기 때문이다.
   ```
-  { messageId: string, roomId: string, writerId: string, content: string,
-    timestamp: number(epoch millis, long), clientMessageId: string }
+  { roomId: string,
+    messages: [ { messageId: string, roomId: string, writerId: string, content: string,
+                  timestamp: number(epoch millis, long), clientMessageId: string } ] }
   ```
+  - `messages` 순서가 **서버가 받은 순서**다. 그대로 순회한다.
   - 필드는 `messageId`(nested `payload.id` 아님), 시간은 `timestamp`(epoch millis 숫자, ISO 문자열 아님)다.
-  - 프론트가 기대하던 `ChatMessageBroadcastEvent { payload, memberIds, clientMessageId }`는 **내부 Kafka 이벤트**(`chat-contract/ChatMessageBroadcastEvent`)이지 브라우저가 받는 형태가 아니다. websocket-gateway가 Kafka 이벤트를 소비→command 매핑 후 **위 flat payload**만 STOMP로 보낸다. `memberIds`는 서버 로컬 전달 판단용이라 wire에는 없다. → 프론트 타입/매퍼를 flat 형태로 맞춰야 한다.
+  - **배칭이 꺼져 있어도 1건짜리 봉투로 온다.** 서버 설정과 무관하게 형태가 일정하다.
+  - `subscribeChatRoomMessages` 가 봉투와 단건을 **모두** 받아 펼친다(`toBroadcastEvents`). 백엔드와 저장소가 달라 배포 순서를 맞출 수 없으므로, 어느 쪽이 먼저 나가도 안 깨지게 둔 것이다.
+  - 내부 Kafka 이벤트 `ChatMessageBroadcastEvent { payload, memberIds, clientMessageId }` 와는 다르다. `memberIds` 는 서버 로컬 전달 판단용이라 wire 에 없다.
 - **ACK payload**: `success: true`면 `id`(서버 메시지 id)·`ts`(타임스탬프) 확정, `false`면 `errors.errors = [{ code, field, message }]`(검증 실패) 또는 그 외(재시도 유도).
 - `writerId`/`roomId`는 발행 시 문자열로 보냄. 브로드캐스트 수신 payload도 문자열이며 프론트에서 `Number(...)` 변환(`chatMessageUtils`).
-- 백엔드 근거: wire payload `websocket-gateway-adapter-out/.../stomp/payload/StompChatMessagePayload.java`(record) + `StompChatMessageBroadcastAdapter.java`(`convertAndSend(CHAT_ROOM_PREFIX.destination(roomId), payload)`). 매핑 `ChatMessageBroadcastEventMapper.java`(내부 `ChatMessagePayload.createdAt: Instant` → `timestamp: long(epochMilli)`, null이면 `0`).
+- **ACK 는 브로커를 거치지 않는다.** 게이트웨이가 세션과 구독 ID 를 직접 찾아 보낸다. 프론트가 볼 차이는 없지만, ACK 가 브로드캐스트 뒤에 밀리지 않는다.
+- 백엔드 근거: wire payload `websocket-gateway-adapter-out/.../stomp/payload/{StompChatMessageBatchPayload,StompChatMessagePayload}.java` + `stomp/{BatchingChatMessageBroadcastAdapter,StompChatMessageBroadcastAdapter}.java`. 매핑 `ChatMessageBroadcastEventMapper.java`(내부 `ChatMessagePayload.createdAt: Instant` → `timestamp: long(epochMilli)`, null이면 `0`).
 - 실시간 프로토콜(낙관적 전송·ACK 재조정·재시도·중복제거·재구독) 이식 절차와 레거시 코드는 `TODO.md` §3~4.
 - 백엔드 근거: `common/common-core/.../StompDestination.java` — `CHAT_ROOM_PREFIX("/topic/chat/")`, `CHAT_ACK_QUEUE("/queue/chat/ack")`, `CHAT_ROOM_BADGE_QUEUE("/queue/chat/badge")`(user prefix `/user`); `StompController.java` — `@MessageMapping("/chat.send")`.
 
