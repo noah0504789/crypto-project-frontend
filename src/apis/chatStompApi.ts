@@ -1,6 +1,11 @@
 import type { Client } from '@stomp/stompjs';
 import type { MyChatRoomBadgeEvent } from '@/types/chatRoom';
-import type { ChatMessageAck, ChatMessageBroadcastEvent, ChatMessageRequest } from '@/types/chatMessage';
+import type {
+  ChatMessageAck,
+  ChatMessageBatchEvent,
+  ChatMessageBroadcastEvent,
+  ChatMessageRequest,
+} from '@/types/chatMessage';
 
 const MY_CHAT_ROOM_BADGE_DESTINATION = '/user/queue/chat/badge';
 
@@ -27,14 +32,26 @@ export function subscribeChatMessageAck(
   });
 }
 
+// 봉투와 단건을 모두 받는다. 백엔드와 프론트가 저장소가 달라 배포 순서를 맞출 수 없으므로,
+// 어느 쪽이 먼저 나가도 깨지지 않게 두 모양을 함께 처리한다.
+// 봉투 안의 순서가 서버가 받은 순서이므로 그대로 순회한다.
+function toBroadcastEvents(body: string): ChatMessageBroadcastEvent[] {
+  const parsed = JSON.parse(body) as ChatMessageBatchEvent | ChatMessageBroadcastEvent;
+
+  if ('messages' in parsed && Array.isArray(parsed.messages)) {
+    return parsed.messages;
+  }
+
+  return [parsed as ChatMessageBroadcastEvent];
+}
+
 export function subscribeChatRoomMessages(
   client: Client,
   roomId: string,
   onMessage: (event: ChatMessageBroadcastEvent) => void,
 ) {
   return client.subscribe(`/topic/chat/${roomId}`, (message) => {
-    const event = JSON.parse(message.body) as ChatMessageBroadcastEvent;
-    onMessage(event);
+    toBroadcastEvents(message.body).forEach(onMessage);
   });
 }
 
