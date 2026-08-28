@@ -48,6 +48,14 @@ export type ChatMessageBroadcastEvent = {
   clientMessageId: string;
 };
 
+// 게이트웨이가 같은 방의 메시지를 시간창(100ms)으로 묶어 보내는 봉투(StompChatMessageBatchPayload).
+// roomId를 메시지마다 반복하지 않으므로 봉투에 한 번만 둔다.
+// messages 순서가 곧 서버가 받은 순서다.
+export type ChatMessageBatchEvent = {
+  roomId: string;
+  messages: ChatMessageBroadcastEvent[];
+};
+
 export type ChatMessageAck = {
   id?: string;
   clientMessageId: string;
