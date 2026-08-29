@@ -130,7 +130,7 @@
   - 필드는 `messageId`(nested `payload.id` 아님), 시간은 `timestamp`(epoch millis 숫자, ISO 문자열 아님)다.
   - **배칭이 꺼져 있어도 1건짜리 봉투로 온다.** 서버 설정과 무관하게 형태가 일정하다.
   - `subscribeChatRoomMessages` 가 봉투와 단건을 **모두** 받아 펼친다(`toBroadcastEvents`). 백엔드와 저장소가 달라 배포 순서를 맞출 수 없으므로, 어느 쪽이 먼저 나가도 안 깨지게 둔 것이다.
-  - 내부 Kafka 이벤트 `ChatMessageBroadcastEvent { payload, memberIds, clientMessageId }` 와는 다르다. `memberIds` 는 서버 로컬 전달 판단용이라 wire 에 없다.
+  - 내부 Kafka 이벤트 `ChatMessageBroadcastEvent { payload, clientMessageId }` 와는 다르다. 서버가 어느 인스턴스로 보낼지는 게이트웨이가 자기 구독 레지스트리로 정하므로 이벤트에 멤버 목록이 없다.
 - **ACK payload**: `success: true`면 `id`(서버 메시지 id)·`ts`(타임스탬프) 확정, `false`면 `errors.errors = [{ code, field, message }]`(검증 실패) 또는 그 외(재시도 유도).
 - `writerId`/`roomId`는 발행 시 문자열로 보냄. 브로드캐스트 수신 payload도 문자열이며 프론트에서 `Number(...)` 변환(`chatMessageUtils`).
 - **ACK 는 브로커를 거치지 않는다.** 게이트웨이가 세션과 구독 ID 를 직접 찾아 보낸다. 프론트가 볼 차이는 없지만, ACK 가 브로드캐스트 뒤에 밀리지 않는다.
