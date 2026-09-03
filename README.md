@@ -24,7 +24,7 @@
 - **TypeScript** — `verbatimModuleSyntax`(타입 import는 `import type` 필수)
 - **react-router-dom v7** (`BrowserRouter`)
 - **axios**(REST, `src/apis/apiClient.ts` — access token/refresh 인터셉터)
-- **@stomp/stompjs + sockjs-client**(WebSocket, `src/apis/stompClient.ts`)
+- **@stomp/stompjs + native WebSocket**(`src/apis/stompClient.ts`)
 - 전역 상태: 라이브러리 없음. `App.tsx`가 최소 전역 상태(user, notifications)만 보유하고 props로 하향 전달
 
 ## 실행

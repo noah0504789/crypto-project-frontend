@@ -7,7 +7,7 @@ React 19 · TypeScript · Vite 기반 SPA. `crypto-project` 백엔드(Spring Clo
 
 - 라우팅: `react-router-dom` v7 (`BrowserRouter`)
 - HTTP: `axios` (`src/apis/apiClient.ts`, access token/refresh 인터셉터)
-- 실시간: `@stomp/stompjs` + `sockjs-client` (`src/apis/stompClient.ts`)
+- 실시간: `@stomp/stompjs` + native WebSocket (`src/apis/stompClient.ts`)
 - 전역 상태: 라이브러리 없음. `App.tsx`의 `useState`(user, notifications)를 props로 하향 전달한다.
 
 문서 안내:
