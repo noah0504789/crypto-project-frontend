@@ -14,7 +14,7 @@
 - **Vite 8** (`vite.config.ts`: `@`→`src` alias, `global: globalThis`는 sockjs용)
 - **TypeScript** (`tsconfig.app.json`, `verbatimModuleSyntax` → 타입 import는 `import type` 필수, `noUnusedLocals/Parameters`)
 - **react-router-dom v7** (`BrowserRouter`)
-- **axios**(REST) / **@stomp/stompjs + sockjs-client**(WebSocket)
+- **axios**(REST) / **@stomp/stompjs + native WebSocket**(WebSocket)
 - 빌드: `tsc -b && vite build` — **타입 에러가 있으면 빌드 실패**(사실상 타입체크가 CI 게이트)
 
 ## 계층 구조와 의존 방향
