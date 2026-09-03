@@ -162,7 +162,7 @@
 
 - **역할**: 서버가 보내는 알림을 헤더 벨(🔔) 드롭다운으로 보여준다. **REST 인박스(과거 알림) + STOMP(실시간)** 를 한 목록으로 합친다.
 - **초기 로드**(`App.tsx`): 로그인 상태가 되면 `getMyNotifications()`로 **첫 페이지(최신순)**를 즉시 조회(`apis/notificationApi.ts`)해 서버의 안 읽음 상태를 헤더 배지에 반영한다. 이미 받은 실시간 항목은 맨 위에 유지하고 그 아래에 REST 목록을 둔다. 한 번 성공하면 같은 로그인 세션에서 벨을 열어도 재요청하지 않으며, 실패하면 벨을 열 때 재시도한다.
-- **수신**(`App.tsx`): 로그인 상태면 STOMP로 **`/user/topic/notification/`** 구독(`subscribeWebNotifications`). 수신 시 목록 **맨 앞에 추가**. 로그아웃/언마운트 시 `deactivate`.
+- **수신**(`App.tsx`): 로그인 상태면 STOMP로 **`/user/queue/notification`** 구독(`subscribeWebNotifications`). 수신 시 목록 **맨 앞에 추가**. 로그아웃/언마운트 시 `deactivate`.
 - **더 보기(무한 스크롤)**(`Header` 드롭다운): `.notification-list`를 아래로 스크롤해 바닥 근처(40px)면 `onLoadMoreNotifications` → 현재 목록의 **가장 오래된(맨 아래) 항목**의 `recipientId`+`deliveredAtMs` 커서로 다음 페이지를 **append**. `hasNextNotification`false면 "마지막 알림입니다", 로딩 중이면 "불러오는 중..." 표시. (chatroom inbox 커서 방식과 동일)
 - **상태 소유**: `App.tsx`의 `notifications: Notification[]` + `hasNextNotification`·`hasLoadedNotifications`·`isLoadingNotifications`.
   - `handleReadNotification(id: string)` — 서버 읽음 PATCH 성공 후 해당 알림을 `read: true`로 갱신.
@@ -177,7 +177,7 @@
 - **타입**(`types/notification.ts`): `Notification`(id:string, title, message, messageParts?, link?, createdAt, read, recipientId?, deliveredAtMs?), `NotificationMessagePart`, `WebNotificationEvent`(STOMP), `NotificationResponse`·`NotificationsResponse`·`NotificationCursor`(REST).
 - **플로우**:
   ```
-  백엔드 notification → Kafka → websocket-gateway → convertAndSendToUser(/topic/notification/)
+  백엔드 notification → Kafka → websocket-gateway → convertAndSendToUser(/queue/notification)
     → App STOMP 구독 수신 → 매핑 → notifications 맨 앞 추가
     → Header 벨 점 표시 → 드롭다운에서 확인/읽음(link 있으면 이동)
   ```

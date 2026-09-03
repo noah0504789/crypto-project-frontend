@@ -18,7 +18,7 @@ export type Notification = {
   deliveredAtMs?: number;
 };
 
-// 백엔드 StompWebNotificationPayload. 구독 destination: /user/topic/notification/
+// 백엔드 StompWebNotificationPayload. 구독 destination: /user/queue/notification
 // title/body는 서버가 표시용으로 완성해 보낸다. data는 부가 정보(현재 미사용).
 export type WebNotificationEvent = {
   notificationId: string;

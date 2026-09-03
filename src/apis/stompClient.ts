@@ -9,8 +9,8 @@ function createWebSocketUrl() {
   const accessToken = getAccessToken();
 
   return accessToken
-    ? `${GATEWAY_URL}/ws?access_token=${accessToken}`
-    : `${GATEWAY_URL}/ws`;
+    ? `${GATEWAY_URL}/ws-sockjs?access_token=${accessToken}`
+    : `${GATEWAY_URL}/ws-sockjs`;
 }
 
 export function createStompClient() {

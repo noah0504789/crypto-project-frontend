@@ -1,9 +1,9 @@
 import type { Client } from '@stomp/stompjs';
 import type { WebNotificationEvent } from '@/types/notification';
 
-// 백엔드가 convertAndSendToUser(receiverId, '/topic/notification/', ...)로 보내므로
-// 클라이언트는 user-destination '/user/topic/notification/'을 구독한다.
-const WEB_NOTIFICATION_DESTINATION = '/user/topic/notification/';
+// 백엔드가 convertAndSendToUser(receiverId, '/queue/notification', ...)로 보내므로
+// 클라이언트는 user-destination '/user/queue/notification'을 구독한다.
+const WEB_NOTIFICATION_DESTINATION = '/user/queue/notification';
 
 export function subscribeWebNotifications(
   client: Client,

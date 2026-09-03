@@ -22,7 +22,7 @@
 
 ## STOMP
 - 구독/발행은 도메인별 `apis/*StompApi.ts` 헬퍼로 추가한다(`chatStompApi.ts`, `notificationStompApi.ts`). destination 문자열은 상수로 모으고 백엔드와 대조.
-- 실시간 알림은 `App`이 `notificationStompApi.subscribeWebNotifications`로 `/user/topic/notification/`을 구독해 연결돼 있다(구현 완료). user-destination은 `/user` prefix가 붙는 점에 주의.
+- 실시간 알림은 `App`이 `notificationStompApi.subscribeWebNotifications`로 `/user/queue/notification`을 구독해 연결돼 있다(구현 완료). user-destination은 `/user` prefix가 붙는 점에 주의.
 
 ## 검증
 - `npm run build`(= `tsc -b && vite build`)로 타입 안전성 확인. `npm run lint`.

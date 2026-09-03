@@ -10,7 +10,7 @@
 
 - **단일 게이트웨이**: 모든 REST/WS는 `GATEWAY_URL`(`src/constants/api.ts` = `VITE_GATEWAY_URL`)로 나간다.
 - **HTTP**: `apiClient`(`src/apis/apiClient.ts`, `withCredentials: true`). refresh 토큰은 httpOnly 쿠키(백엔드 Set-Cookie), access 토큰은 `sessionStorage`(`src/utils/authStorage.ts`). 요청 헤더 `Authorization: Bearer {accessToken}`(있을 때).
-- **STOMP prefix**: 앱(전송) `/msg`, user `/user`, 브로커(구독) `/topic`·`/queue`. 엔드포인트 `/ws`(SockJS)·`/ws-native`(native) 둘 다 등록. **핸드셰이크 인증 = URL 쿼리 `?access_token=`**(connectHeaders 아님, 없으면 401).
+- **STOMP prefix**: 앱(전송) `/msg`, user `/user`, 브로커(구독) `/topic`·`/queue`. 엔드포인트 `/ws-sockjs`(SockJS)·`/ws-native`(native) 둘 다 등록. **핸드셰이크 인증 = URL 쿼리 `?access_token=`**(connectHeaders 아님, 없으면 401).
 - **커서 페이지네이션**: 응답 `{ items, hasNext }`. 다음 페이지는 마지막 항목 커서로 요청.
 - **검증 에러**: 실패 응답 `response.data.errors = [{ field, message, code? }]`.
 - 백엔드 근거: STOMP prefix `websocket-gateway/.../StompConfig.java`(`setApplicationDestinationPrefixes`) + `git-config-repo/dynamic/websocket-gateway.yml`(`application-destination-prefix: /msg`), 핸드셰이크 `gateway WebsocketHandshakeAuthWebFilter`.
@@ -111,7 +111,7 @@
 
 ## 3. STOMP (`apis/chatStompApi.ts`, `stompClient.ts`)
 
-연결: `GATEWAY_URL/ws`(SockJS) 또는 `GATEWAY_URL/ws-native`(native). **핸드셰이크 인증 = URL 쿼리 `?access_token=`**(connectHeaders 아님). 예: `new SockJS(GATEWAY_URL + '/ws?access_token=' + getAccessToken())`.
+연결: `GATEWAY_URL/ws-sockjs`(SockJS) 또는 `GATEWAY_URL/ws-native`(native). **핸드셰이크 인증 = URL 쿼리 `?access_token=`**(connectHeaders 아님). 예: `new SockJS(GATEWAY_URL + '/ws-sockjs?access_token=' + getAccessToken())`.
 
 | 방향 | destination | 페이로드 |
 | --- | --- | --- |
@@ -140,12 +140,12 @@
 
 ## 4. 실시간 알림 스트림 (연동 완료)
 
-- **채널: STOMP**(SSE 아님). 백엔드가 사용자별로 `convertAndSendToUser(receiverId, "/topic/notification/", payload)`로 보낸다 → 클라이언트 **구독 destination = `/user/topic/notification/`**(user-destination). 로컬 세션이 있는 대상에게만 push.
+- **채널: STOMP**(SSE 아님). 백엔드가 사용자별로 `convertAndSendToUser(receiverId, "/queue/notification", payload)`로 보낸다 → 클라이언트 **구독 destination = `/user/queue/notification`**(user-destination). 로컬 세션이 있는 대상에게만 push.
 - **wire payload** `StompWebNotificationPayload` = 프론트 `WebNotificationEvent`:
   ```
   { notificationId: string, type: string, title: string, body: string,
     createdAtMs: number(epoch millis, long), link: string, data?: Record<string, unknown> }
   ```
   `title`/`body`는 서버가 표시용으로 완성해 보낸다(프론트에서 재조립 불필요).
-- **프론트 구현**: 로그인 시 `App`이 STOMP로 `/user/topic/notification/` 구독(`apis/notificationStompApi.ts`) → `mapWebNotificationToNotification`으로 `Notification` 변환 → `Header` 벨 드롭다운. `id`는 `notificationId`를 사용하고, `link`가 있으면 읽음 처리 후 이동.
-- 백엔드 근거: `websocket-gateway-adapter-out/.../notification/adapter/out/stomp/StompWebNotificationAdapter.java`(`convertAndSendToUser`, `NOTIFICATION_PREFIX = "/topic/notification/"`) + `.../stomp/payload/StompWebNotificationPayload.java`. 흐름: `notification`이 Kafka `web-notification-broadcast-event` 발행 → websocket-gateway 소비(`WebNotificationEventMapper` → command) → 위 STOMP 전송.
+- **프론트 구현**: 로그인 시 `App`이 STOMP로 `/user/queue/notification` 구독(`apis/notificationStompApi.ts`) → `mapWebNotificationToNotification`으로 `Notification` 변환 → `Header` 벨 드롭다운. `id`는 `notificationId`를 사용하고, `link`가 있으면 읽음 처리 후 이동.
+- 백엔드 근거: `websocket-gateway-adapter-out/.../notification/adapter/out/stomp/StompWebNotificationAdapter.java`(`convertAndSendToUser`, `NOTIFICATION_QUEUE = "/queue/notification"`) + `.../stomp/payload/StompWebNotificationPayload.java`. 흐름: `notification`이 Kafka `web-notification-broadcast-event` 발행 → websocket-gateway 소비(`WebNotificationEventMapper` → command) → 위 STOMP 전송.

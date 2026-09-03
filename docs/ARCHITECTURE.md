@@ -81,7 +81,7 @@ src/
 - `baseURL = GATEWAY_URL`, `withCredentials: true`(refresh 쿠키).
 
 ### 실시간 — `apis/stompClient.ts` + `apis/chatStompApi.ts`
-- 전송: STOMP over SockJS, 엔드포인트 `GATEWAY_URL/ws`. `createStompClient()`가 **핸드셰이크 URL 쿼리(`?access_token=`)로 토큰을 실어** `Client`를 만든다(자동 재연결 `reconnectDelay: 5000`, 재연결마다 최신 토큰).
+- 전송: STOMP over SockJS, 엔드포인트 `GATEWAY_URL/ws-sockjs`. `createStompClient()`가 **핸드셰이크 URL 쿼리(`?access_token=`)로 토큰을 실어** `Client`를 만든다(자동 재연결 `reconnectDelay: 5000`, 재연결마다 최신 토큰).
 - 구독/발행 로직은 `chatStompApi.ts` 헬퍼로 캡슐화한다(페이지는 destination 문자열을 직접 다루지 않음). **destination·payload 계약은 `docs/API_CONTRACT.md` §3.**
 - 라이프사이클: 페이지 `useEffect`에서 `activate()`, cleanup에서 `deactivate()`. 방/유저 의존성 변화 시 재연결.
 - ⚠️ STOMP에는 REST 같은 401 자동 재발급이 없다(연결 시점 토큰 만료 시 재연결만 반복). 개선 여지 — `docs/AUTH.md`.

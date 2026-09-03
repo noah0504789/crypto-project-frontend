@@ -100,7 +100,7 @@ export default function App() {
     };
   }, []);
 
-  // 로그인 상태면 실시간 알림(STOMP /user/topic/notification/)을 구독한다.
+  // 로그인 상태면 실시간 알림(STOMP /user/queue/notification)을 구독한다.
   useEffect(() => {
     if (!user) {
       return;
