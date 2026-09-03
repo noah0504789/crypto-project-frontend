@@ -111,7 +111,7 @@
 
 ## 3. STOMP (`apis/chatStompApi.ts`, `stompClient.ts`)
 
-연결: `GATEWAY_URL/ws-sockjs`(SockJS) 또는 `GATEWAY_URL/ws-native`(native). **핸드셰이크 인증 = URL 쿼리 `?access_token=`**(connectHeaders 아님). 예: `new SockJS(GATEWAY_URL + '/ws-sockjs?access_token=' + getAccessToken())`.
+연결: 프론트는 `GATEWAY_URL/ws-native`(native)를 사용하며 `/ws-sockjs`도 서버에 등록돼 있다. **핸드셰이크 인증 = URL 쿼리 `?access_token=`**(connectHeaders 아님). 예: `new WebSocket(GATEWAY_URL.replace(/^http/, 'ws') + '/ws-native?access_token=' + getAccessToken())`.
 
 | 방향 | destination | 페이로드 |
 | --- | --- | --- |

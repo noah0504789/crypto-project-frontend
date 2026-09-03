@@ -103,8 +103,8 @@ finally {
 ### 5) WebSocket 인증 — `stompClient.ts`
 STOMP 연결은 같은 access token을 **핸드셰이크 URL 쿼리로** 실어 보낸다(게이트웨이 `WebsocketHandshakeAuthWebFilter`가 쿼리 `access_token`으로 인증).
 ```ts
-// connectHeaders가 아니라 SockJS 핸드셰이크 URL 쿼리로 넘긴다(재연결마다 최신 토큰).
-new SockJS(`${GATEWAY_URL}/ws-sockjs?access_token=${getAccessToken()}`);
+// connectHeaders가 아니라 native WebSocket 핸드셰이크 URL 쿼리로 넘긴다(재연결마다 최신 토큰).
+new WebSocket(`${GATEWAY_URL.replace(/^http/, 'ws')}/ws-native?access_token=${getAccessToken()}`);
 ```
 - 단, STOMP에는 axios 같은 **401 자동 재발급 로직이 없다.** 연결 시점의 토큰이 만료됐다면 재연결(`reconnectDelay: 5000`)만 반복될 수 있다. (개선 여지)
 
