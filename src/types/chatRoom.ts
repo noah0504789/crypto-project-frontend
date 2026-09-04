@@ -20,7 +20,7 @@ export type PopularChatRoomResponse = {
 };
 
 export type PopularChatRoomCursor = {
-  lastId?: string;
+  lastRoomId?: string;
   lastPopularity?: number;
 };
 
@@ -57,8 +57,8 @@ export type MyChatRoomResponse = {
 
 export type MyChatRoomCursor = {
   lastUnreadFlag?: boolean;
-  lastMsgCreatedAt?: string | null;
-  lastId?: string;
+  lastMsgCreatedAtMs?: number;
+  lastRoomId?: string;
 };
 
 export type CreateChatRoomRequest = {

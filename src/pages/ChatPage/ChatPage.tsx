@@ -71,7 +71,7 @@ export default function ChatPage({ user }: ChatPageProps) {
       const response = await getPopularChatRooms({
         limit: POPULAR_CHAT_ROOM_LIMIT,
         category: DEFAULT_CATEGORY,
-        lastId: cursor.lastId,
+        lastRoomId: cursor.lastRoomId,
         lastPopularity: cursor.lastPopularity,
       });
 
@@ -95,7 +95,7 @@ export default function ChatPage({ user }: ChatPageProps) {
     const lastRoom = popularChatRooms[popularChatRooms.length - 1];
 
     loadMorePopularChatRooms({
-      lastId: lastRoom.id,
+      lastRoomId: lastRoom.id,
       lastPopularity: lastRoom.popularity,
     });
   }

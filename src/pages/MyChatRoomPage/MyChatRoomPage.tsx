@@ -171,8 +171,8 @@ export default function MyChatRoomsPage({ user }: MyChatRoomsPageProps) {
       const response = await getMyChatRooms({
         limit: MY_CHAT_ROOM_LIMIT,
         lastUnreadFlag: cursor.lastUnreadFlag,
-        lastMsgCreatedAt: cursor.lastMsgCreatedAt,
-        lastId: cursor.lastId,
+        lastMsgCreatedAtMs: cursor.lastMsgCreatedAtMs,
+        lastRoomId: cursor.lastRoomId,
       });
 
       setMyChatRooms((prevRooms) => [
@@ -196,8 +196,10 @@ export default function MyChatRoomsPage({ user }: MyChatRoomsPageProps) {
 
     loadMoreMyChatRooms({
       lastUnreadFlag: lastRoom.unreadMsgCnt > 0,
-      lastMsgCreatedAt: lastRoom.lastMsgCreatedAt,
-      lastId: lastRoom.id,
+      lastMsgCreatedAtMs: lastRoom.lastMsgCreatedAt
+        ? new Date(lastRoom.lastMsgCreatedAt).getTime()
+        : 0,
+      lastRoomId: lastRoom.id,
     });
   }
 

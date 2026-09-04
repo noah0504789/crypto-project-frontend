@@ -38,7 +38,7 @@
 - **역할**: 누구나 볼 수 있는 인기 오픈채팅방 목록.
 - **기능**:
   - 마운트 시 인기 채팅방 조회(카테고리 고정 `CRYPTO_CURRENCY`, limit 10).
-  - "더 보기"로 다음 페이지(커서: 마지막 방의 `lastId` + `lastPopularity`).
+  - "더 보기"로 다음 페이지(커서: 마지막 방의 `lastRoomId` + `lastPopularity`).
   - 방 카드: 제목/인기도/설명/멤버수/방장/생성일. "입장하기" 버튼.
   - 로그인 시 상단에 "내 채팅방"·"채팅방 생성" 링크 노출.
 - **플로우**:
@@ -55,7 +55,7 @@
 ### `/chat/my` — MyChatRoomPage (내 채팅방) (`pages/MyChatRoomPage/MyChatRoomPage.tsx`)
 - **역할**: 내가 참여 중인 채팅방 목록 + 실시간 뱃지.
 - **기능**:
-  - 내 채팅방 조회(limit 10, 커서: `lastUnreadFlag`+`lastMsgCreatedAt`+`lastId`).
+  - 내 채팅방 조회(limit 10, 커서: `lastUnreadFlag`+`lastMsgCreatedAtMs`+`lastRoomId`).
   - 각 방: 안읽음 수 뱃지(99+ 처리), 최근 메시지/시각, 멤버수, 방장(👑) 표시.
   - 액션: 입장 / (방장이면)수정 / 나가기.
   - **실시간 뱃지**: STOMP 구독으로 새 메시지 도착 시 안읽음 수·최근 메시지 갱신.

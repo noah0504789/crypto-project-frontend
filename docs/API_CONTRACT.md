@@ -21,8 +21,8 @@
 
 | 기능 | Method · Path | params / body | 성공 status |
 |---|---|---|---|
-| 인기 채팅방 | `GET /chat/rooms/popular` | `limit, category, lastId, lastPopularity` | 2xx |
-| 내 채팅방 목록 | `GET /chat/rooms/me` | `limit, lastUnreadFlag, lastMsgCreatedAt, lastId` | 2xx |
+| 인기 채팅방 | `GET /chat/rooms/popular` | `limit, category, lastRoomId, lastPopularity` | 2xx |
+| 내 채팅방 목록 | `GET /chat/rooms/me` | `limit, lastUnreadFlag, lastMsgCreatedAtMs, lastRoomId` | 2xx |
 | 내 채팅방 단건 | `GET /chat/room/{roomId}/me` | — | 2xx |
 | 방 상세 | `GET /chat/room/{roomId}` | — | 200 |
 | 방 메시지 | `GET /chat/room/{roomId}/messages` | `limit, lastMsgId, lastCreatedAtMs` | 2xx |
@@ -65,8 +65,8 @@
 ### 채팅방 (`apis/chatRoomApi.ts`)
 | 프론트 | 요청 | 응답 |
 | --- | --- | --- |
-| `getPopularChatRooms` | `GET /chat/rooms/popular?limit&category&lastId&lastPopularity` | `PopularChatRoomResponse { items: ChatRoomResponse[], hasNext }` (`msgCnt`, `lastMsgSeq` 포함) |
-| `getMyChatRooms` | `GET /chat/rooms/me?limit&lastUnreadFlag&lastMsgCreatedAt&lastId` | `MyChatRoomResponse { items: MyChatRoom[], hasNext }` |
+| `getPopularChatRooms` | `GET /chat/rooms/popular?limit&category&lastRoomId&lastPopularity` | `PopularChatRoomResponse { items: ChatRoomResponse[], hasNext }` (`msgCnt`, `lastMsgSeq` 포함) |
+| `getMyChatRooms` | `GET /chat/rooms/me?limit&lastUnreadFlag&lastMsgCreatedAtMs&lastRoomId` | `MyChatRoomResponse { items: MyChatRoom[], hasNext }`. 응답의 ISO `lastMsgCreatedAt`을 다음 요청에서 epoch millis `lastMsgCreatedAtMs`로 변환 |
 | `getMyChatRoom(roomId)` | `GET /chat/room/{roomId}/me` | `MyChatRoom` 단건(배지 방이 목록에 없을 때 prepend용) |
 | `getChatRoom(roomId)` | `GET /chat/room/{roomId}` | `ChatRoomDetailResponse { id, hostId, title, description, category, msgCnt, lastMsgSeq, memberCnt, popularity, createdAt }`. `msgCnt`는 보관 메시지 수, `lastMsgSeq`는 읽음 보고 `lastMsgReadSeq`의 시작점 |
 | `createChatRoom` | `POST /chat/room` `{ title, description, category }` | 201 |

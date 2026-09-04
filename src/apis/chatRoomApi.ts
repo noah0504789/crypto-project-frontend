@@ -27,7 +27,7 @@ type GetMyChatRoomsParams = MyChatRoomCursor & {
 export async function getPopularChatRooms({
   limit,
   category,
-  lastId,
+  lastRoomId,
   lastPopularity,
 }: GetPopularChatRoomsParams) {
   const response = await apiClient.get<PopularChatRoomResponse>(
@@ -36,7 +36,7 @@ export async function getPopularChatRooms({
       params: {
         limit,
         category,
-        lastId,
+        lastRoomId,
         lastPopularity,
       },
     },
@@ -48,15 +48,15 @@ export async function getPopularChatRooms({
 export async function getMyChatRooms({
   limit,
   lastUnreadFlag,
-  lastMsgCreatedAt,
-  lastId,
+  lastMsgCreatedAtMs,
+  lastRoomId,
 }: GetMyChatRoomsParams) {
   const response = await apiClient.get<MyChatRoomResponse>('/chat/rooms/me', {
     params: {
       limit,
       lastUnreadFlag,
-      lastMsgCreatedAt,
-      lastId,
+      lastMsgCreatedAtMs,
+      lastRoomId,
     },
   });
 
