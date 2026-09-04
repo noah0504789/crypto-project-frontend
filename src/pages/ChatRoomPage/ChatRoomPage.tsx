@@ -59,7 +59,7 @@ export default function ChatRoomPage({ user }: ChatRoomPageProps) {
   const ackTimersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(
     new Map(),
   );
-  // 읽음 위치 보고(4.7): msgCnt를 시작점으로, 브로드캐스트 1건당 +1.
+  // 읽음 위치 보고(4.7): lastMsgSeq를 시작점으로, 브로드캐스트 1건당 +1.
   const lastReadSeqRef = useRef(0);
   const lastMsgCreatedAtMsRef = useRef(0);
   const hasRoomDetailRef = useRef(false);
@@ -176,7 +176,7 @@ export default function ChatRoomPage({ user }: ChatRoomPageProps) {
     };
   }, [isLoggedIn, isInvalidRoomId, roomId]);
 
-  // 방 상세 조회(4.5): 제목·읽음 시퀀스 시작점(msgCnt).
+  // 방 상세 조회(4.5): 제목·읽음 시퀀스 시작점(lastMsgSeq).
   useEffect(() => {
     if (!isLoggedIn || isInvalidRoomId) {
       return;
@@ -195,7 +195,7 @@ export default function ChatRoomPage({ user }: ChatRoomPageProps) {
         }
 
         setRoomTitle(room.title);
-        lastReadSeqRef.current = room.msgCnt ?? 0;
+        lastReadSeqRef.current = room.lastMsgSeq ?? 0;
         hasRoomDetailRef.current = true;
       } catch (error) {
         console.error(error);
@@ -240,7 +240,7 @@ export default function ChatRoomPage({ user }: ChatRoomPageProps) {
           clearAckTimer(event.clientMessageId);
         }
 
-        // 서버 저장 1건 = msgCnt+1. 읽음 시퀀스를 함께 올린다(4.7).
+        // 서버 저장 1건 = lastMsgSeq+1. 읽음 시퀀스를 함께 올린다(4.7).
         lastReadSeqRef.current += 1;
         lastMsgCreatedAtMsRef.current = event.timestamp || Date.now();
 
@@ -342,7 +342,7 @@ export default function ChatRoomPage({ user }: ChatRoomPageProps) {
     }
 
     function reportReadActivity() {
-      // 방 상세(msgCnt)를 못 받았으면 시퀀스 시작점이 없어 보고하지 않는다(잘못된 0 보고 방지).
+      // 방 상세(lastMsgSeq)를 못 받았으면 시퀀스 시작점이 없어 보고하지 않는다(잘못된 0 보고 방지).
       if (!hasRoomDetailRef.current) {
         return;
       }

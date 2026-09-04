@@ -9,6 +9,8 @@ export type PopularChatRoom = {
   popularity: number;
   memberCnt: number;
   hostId: string;
+  msgCnt: number;
+  lastMsgSeq: number;
   createdAt: string;
 };
 
@@ -22,7 +24,7 @@ export type PopularChatRoomCursor = {
   lastPopularity?: number;
 };
 
-// GET /chat/room/{roomId} 방 상세(백엔드 ChatRoomResponse). id는 문자열, msgCnt는 최신 시퀀스.
+// GET /chat/room/{roomId} 방 상세(백엔드 ChatRoomResponse).
 export type ChatRoomDetailResponse = {
   id: string;
   hostId: string;
@@ -30,6 +32,7 @@ export type ChatRoomDetailResponse = {
   description: string;
   category: ChatRoomCategory;
   msgCnt: number;
+  lastMsgSeq: number;
   memberCnt: number;
   popularity: number;
   createdAt: string;

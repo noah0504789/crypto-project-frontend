@@ -121,11 +121,11 @@
           발행 실패 시 즉시 failed
     상단 스크롤(임계 40px) → loadPreviousMessages(커서: 가장 오래된 메시지) → 앞에 prepend + 스크롤 보정
   ```
-- **API/STOMP**: `getChatMessages`, `getChatRoom`(제목·`msgCnt`), `subscribeChatRoomMessages`, `subscribeChatMessageAck`, `sendChatMessage`, `getUserProfile`(상대 닉네임/아바타), `reportActivity`(읽음 보고).
+- **API/STOMP**: `getChatMessages`, `getChatRoom`(제목·`lastMsgSeq`), `subscribeChatRoomMessages`, `subscribeChatMessageAck`, `sendChatMessage`, `getUserProfile`(상대 닉네임/아바타), `reportActivity`(읽음 보고).
 - **방 제목**: `getChatRoom(roomId)`로 조회해 표시(하드코딩 제거됨).
 - **ACK 타임아웃**: 전송 후 3초 내 ACK/브로드캐스트가 없으면 해당 말풍선을 `failed`로 표시(재전송 가능).
 - **상대 프로필**: 내가 아닌 작성자 닉네임/아바타는 `getUserProfile`로 채운다(캐시+dedup). 실패 시 `사용자 {id}` 폴백.
-- **읽음 보고**: 방을 떠날 때(언마운트)·`beforeunload`에 `reportActivity`(keepalive fetch)로 `lastMsgReadSeq`(=`msgCnt`+수신 브로드캐스트 수)·`lastMsgCreatedAtMs` 전송.
+- **읽음 보고**: 방을 떠날 때(언마운트)·`beforeunload`에 `reportActivity`(keepalive fetch)로 `lastMsgReadSeq`(=`lastMsgSeq`+수신 브로드캐스트 수)·`lastMsgCreatedAtMs` 전송.
 - **로그인 필요**: O.
 
 ---

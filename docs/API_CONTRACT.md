@@ -65,10 +65,10 @@
 ### 채팅방 (`apis/chatRoomApi.ts`)
 | 프론트 | 요청 | 응답 |
 | --- | --- | --- |
-| `getPopularChatRooms` | `GET /chat/rooms/popular?limit&category&lastId&lastPopularity` | `PopularChatRoomResponse { items: PopularChatRoom[], hasNext }` |
+| `getPopularChatRooms` | `GET /chat/rooms/popular?limit&category&lastId&lastPopularity` | `PopularChatRoomResponse { items: ChatRoomResponse[], hasNext }` (`msgCnt`, `lastMsgSeq` 포함) |
 | `getMyChatRooms` | `GET /chat/rooms/me?limit&lastUnreadFlag&lastMsgCreatedAt&lastId` | `MyChatRoomResponse { items: MyChatRoom[], hasNext }` |
-| `getMyChatRoom(roomId)` | `GET /chat/room/{roomId}/me` | `MyChatRoomResponse` 단건(배지 방이 목록에 없을 때 prepend용) |
-| `getChatRoom(roomId)` | `GET /chat/room/{roomId}` | `ChatRoomDetailResponse { id, hostId, title, description, category, msgCnt, memberCnt, popularity, createdAt }`. `msgCnt`는 최신 시퀀스(읽음 보고 `lastMsgReadSeq` 시작점) |
+| `getMyChatRoom(roomId)` | `GET /chat/room/{roomId}/me` | `MyChatRoom` 단건(배지 방이 목록에 없을 때 prepend용) |
+| `getChatRoom(roomId)` | `GET /chat/room/{roomId}` | `ChatRoomDetailResponse { id, hostId, title, description, category, msgCnt, lastMsgSeq, memberCnt, popularity, createdAt }`. `msgCnt`는 보관 메시지 수, `lastMsgSeq`는 읽음 보고 `lastMsgReadSeq`의 시작점 |
 | `createChatRoom` | `POST /chat/room` `{ title, description, category }` | 201 |
 | `updateChatRoom` | `PATCH /chat/room/{roomId}` 변경 필드만 `{ title?, description?, category? }` | 204 |
 | `joinChatRoom(roomId)` | `POST /chat/room/{roomId}/members` | 201·204 |
