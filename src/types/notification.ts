@@ -18,8 +18,8 @@ export type Notification = {
   deliveredAtMs?: number;
 };
 
-// 백엔드 PriceAlertData. 가격 알림의 탐지 원본이며 type이 'PRICE_ALERT'일 때 채워진다.
-export type PriceAlertData = {
+// 백엔드 PriceAlertPayload. 가격 알림의 탐지 원본이며 type이 'PRICE_ALERT'일 때 채워진다.
+export type PriceAlertPayload = {
   code: string;
   price: number;
   avgPrice: number;
@@ -42,7 +42,7 @@ type WebNotificationBase = {
 
 // type을 판별자로 쓰는 유니온. 알림 종류가 늘면 여기에 갈래를 추가한다.
 export type WebNotificationEvent =
-  | (WebNotificationBase & { type: 'PRICE_ALERT'; data: PriceAlertData })
+  | (WebNotificationBase & { type: 'PRICE_ALERT'; data: PriceAlertPayload })
   | (WebNotificationBase & { type: 'SYSTEM'; data: null });
 
 // GET /notifications/me 응답 항목(백엔드 NotificationResponse).
