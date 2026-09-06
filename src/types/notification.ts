@@ -18,18 +18,32 @@ export type Notification = {
   deliveredAtMs?: number;
 };
 
+// 백엔드 PriceAlertData. 가격 알림의 탐지 원본이며 type이 'PRICE_ALERT'일 때 채워진다.
+export type PriceAlertData = {
+  code: string;
+  price: number;
+  avgPrice: number;
+  avgInterval: number;
+  changeRate: number;
+  threshold: string;
+  occurredAtMs: number;
+};
+
 // 백엔드 StompWebNotificationPayload. 구독 destination: /user/queue/notification
-// title/body는 서버가 표시용으로 완성해 보낸다. data는 부가 정보(현재 미사용).
-export type WebNotificationEvent = {
+// title/body는 서버가 표시용으로 완성해 보낸다. data는 화면이 직접 조합할 때 쓰는 원본이다.
+type WebNotificationBase = {
   notificationId: string;
-  type: string;
   title: string;
   body: string;
   createdAtMs: number;
   link: string | null;
   messageParts: NotificationMessagePartResponse[];
-  data?: Record<string, unknown>;
 };
+
+// type을 판별자로 쓰는 유니온. 알림 종류가 늘면 여기에 갈래를 추가한다.
+export type WebNotificationEvent =
+  | (WebNotificationBase & { type: 'PRICE_ALERT'; data: PriceAlertData })
+  | (WebNotificationBase & { type: 'SYSTEM'; data: null });
 
 // GET /notifications/me 응답 항목(백엔드 NotificationResponse).
 // deliveredAt는 표시용 문자열, deliveredAtMs는 커서용 epoch millis(다음 페이지 요청에 그대로 되돌려 보냄).
